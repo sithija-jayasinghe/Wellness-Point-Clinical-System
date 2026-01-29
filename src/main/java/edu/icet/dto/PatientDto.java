@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class PatientDto {
-    private Long patientId;
+    private Long id;
     private String name;
     private String nic;
     private String phone;

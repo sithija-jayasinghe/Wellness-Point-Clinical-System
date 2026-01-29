@@ -1,12 +1,15 @@
 package edu.icet.dto;
 
+import edu.icet.entity.User;
 import lombok.Data;
 
 @Data
 public class DoctorDto {
     private Long doctorId;
-    private Long userId;
-    private String doctorName;
+    private User userId;
+    private String name;
     private String specialization;
     private double consultationFee;
+    private String contact;
+    private String status;
 }
