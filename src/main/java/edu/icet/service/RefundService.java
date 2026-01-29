@@ -1,11 +1,12 @@
 package edu.icet.service;
 
-import edu.icet.entity.Refund;
+import edu.icet.dto.RefundDto;
 import java.util.List;
 
 public interface RefundService {
-    Refund saveRefund(Refund refund);
-    List<Refund> getAllRefunds();
-    Refund getRefundById(Long id);
+    void addRefund(RefundDto refundDto);
+    List<RefundDto> getAllRefunds();
+    RefundDto getRefundById(Long id);
+    void updateRefund(Long id, RefundDto refundDto);
     void deleteRefund(Long id);
 }

@@ -1,16 +1,14 @@
 package edu.icet.dto;
 
 import lombok.Data;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDate;
 
 @Data
 public class PaymentDto {
     private Long paymentId;
-    private Long appointmentId;
     private Double amount;
+    private LocalDate paymentDate;
+    private Long appointmentId;
     private String paymentMethod;
-    private Date paymentDate;
     private String status;
-    private List<RefundDto> refunds;
 }
