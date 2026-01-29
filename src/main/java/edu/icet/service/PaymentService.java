@@ -1,11 +1,12 @@
 package edu.icet.service;
 
-import edu.icet.entity.Payment;
+import edu.icet.dto.PaymentDto;
 import java.util.List;
 
 public interface PaymentService {
-    Payment savePayment(Payment payment);
-    List<Payment> getAllPayments();
-    Payment getPaymentById(Long id);
+    void addPayment(PaymentDto paymentDto);
+    List<PaymentDto> getAllPayments();
+    PaymentDto getPaymentById(Long id);
+    void updatePayment(Long id, PaymentDto paymentDto);
     void deletePayment(Long id);
 }

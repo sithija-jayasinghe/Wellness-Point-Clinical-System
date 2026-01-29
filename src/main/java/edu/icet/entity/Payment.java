@@ -1,27 +1,33 @@
 package edu.icet.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDate;
 
 @Entity
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "payment")
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "payment_id")
     private Long paymentId;
 
-    private Long appointmentId;
     private Double amount;
+
+    @Column(name = "payment_date")
+    private LocalDate paymentDate;
+
+    @Column(name = "appointment_id")
+    private Long appointmentId;
+
+    @Column(name = "payment_method")
     private String paymentMethod;
 
-    @Temporal(TemporalType.DATE)
-    private Date paymentDate;
     private String status;
-
-    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
-    private List<Refund> refunds;
 }
