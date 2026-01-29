@@ -7,6 +7,7 @@ import edu.icet.entity.Consultation;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.ConsultationRepository;
 import edu.icet.service.ConsultationService;
+import edu.icet.util.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,11 +32,11 @@ public class ConsultationServiceImpl implements ConsultationService {
                     .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
             // Rule: Consultation allowed only for BOOKED appointments
-            if ("CANCELLED".equalsIgnoreCase(appointment.getStatus()) || "COMPLETED".equalsIgnoreCase(appointment.getStatus())) {
+            if (appointment.getStatus() == AppointmentStatus.CANCELLED || appointment.getStatus() == AppointmentStatus.COMPLETED) {
                  throw new RuntimeException("Consultation not allowed. Appointment is CANCELLED or COMPLETED.");
             }
             // Optional: Strictly enforce BOOKED
-            if (!"BOOKED".equalsIgnoreCase(appointment.getStatus())) {
+            if (appointment.getStatus() != AppointmentStatus.BOOKED) {
                 // Determine if we should be strict or just check for negative statuses.
                 // The prompt says: "Consultation allowed only for BOOKED appointments".
                  throw new RuntimeException("Consultation allowed only for BOOKED appointments.");
@@ -46,7 +47,7 @@ public class ConsultationServiceImpl implements ConsultationService {
             Consultation saved = consultationRepo.save(consultation);
 
             // Auto-Complete: After consultation is saved -> update appointment status to COMPLETED
-            appointment.setStatus("COMPLETED");
+            appointment.setStatus(AppointmentStatus.COMPLETED);
             appointmentRepo.save(appointment);
 
             return mapper.convertValue(saved, ConsultationDto.class);

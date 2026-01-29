@@ -19,4 +19,7 @@ public class Patient {
     private String phone;
     private LocalDate dob;
     private String gender;
+
+    // Link to User for notifications/login
+    private Long userId;
 }

@@ -6,6 +6,7 @@ import edu.icet.entity.Appointment;
 import edu.icet.entity.Consultation;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.ConsultationRepository;
+import edu.icet.util.AppointmentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +53,7 @@ class ConsultationServiceImplTest {
 
         appointment = new Appointment();
         appointment.setId(1L);
-        appointment.setStatus("BOOKED");
+        appointment.setStatus(AppointmentStatus.BOOKED);
     }
 
     @Test
@@ -69,13 +70,13 @@ class ConsultationServiceImplTest {
         verify(consultationRepo, times(1)).save(consultation);
 
         // Verify appointment status is updated to COMPLETED
-        assertEquals("COMPLETED", appointment.getStatus());
+        assertEquals(AppointmentStatus.COMPLETED, appointment.getStatus());
         verify(appointmentRepo, times(1)).save(appointment);
     }
 
     @Test
     void saveConsultation_CancelledAppointment_ThrowsException() {
-        appointment.setStatus("CANCELLED");
+        appointment.setStatus(AppointmentStatus.CANCELLED);
 
         when(mapper.convertValue(consultationDto, Consultation.class)).thenReturn(consultation);
         when(appointmentRepo.findById(1L)).thenReturn(Optional.of(appointment));
@@ -88,7 +89,7 @@ class ConsultationServiceImplTest {
 
     @Test
     void saveConsultation_CompletedAppointment_ThrowsException() {
-        appointment.setStatus("COMPLETED");
+        appointment.setStatus(AppointmentStatus.COMPLETED);
 
         when(mapper.convertValue(consultationDto, Consultation.class)).thenReturn(consultation);
         when(appointmentRepo.findById(1L)).thenReturn(Optional.of(appointment));

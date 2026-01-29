@@ -11,4 +11,7 @@ public interface AppointmentService {
     AppointmentDto getAppointmentById(Long id);
     void deleteAppointment(Long id);
     AppointmentDto updateAppointment(Long id, AppointmentDto appointmentDto);
+
+    void cancelAppointment(Long id);
+    void completeAppointment(Long id);
 }

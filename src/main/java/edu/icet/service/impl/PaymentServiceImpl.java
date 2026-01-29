@@ -1,15 +1,19 @@
 package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.icet.dto.AuditLogDto;
 import edu.icet.dto.PaymentDto;
 import edu.icet.entity.Appointment;
 import edu.icet.entity.Payment;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
+import edu.icet.service.AuditLogService;
 import edu.icet.service.PaymentService;
+import edu.icet.util.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +24,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepo;
     private final AppointmentRepository appointmentRepo;
+    private final AuditLogService auditLogService;
     private final ObjectMapper mapper;
 
     @Override
@@ -31,6 +36,10 @@ public class PaymentServiceImpl implements PaymentService {
             Appointment appointment = appointmentRepo.findById(payment.getAppointmentId())
                     .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
+            if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+                throw new RuntimeException("Cannot make payment for a CANCELLED appointment.");
+            }
+
             if (appointment.getDoctor() != null) {
                 if (payment.getAmount() != appointment.getDoctor().getConsultationFee()) {
                     throw new RuntimeException("Payment amount must match the doctor's consultation fee: " + appointment.getDoctor().getConsultationFee());
@@ -38,7 +47,17 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
 
-        paymentRepo.save(payment);
+        Payment savedPayment = paymentRepo.save(payment);
+
+        // Audit Log
+        AuditLogDto auditLog = new AuditLogDto();
+        auditLog.setUserId(null); // System action or unknown user context
+        auditLog.setAction("PAYMENT_MADE");
+        auditLog.setEntity("Payment");
+        auditLog.setEntityId(savedPayment.getPaymentId());
+        auditLog.setTimestamp(LocalDateTime.now());
+
+        auditLogService.createLog(auditLog);
     }
 
     @Override

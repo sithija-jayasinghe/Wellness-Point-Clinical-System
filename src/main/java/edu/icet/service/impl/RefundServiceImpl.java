@@ -9,6 +9,7 @@ import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.RefundRepository;
 import edu.icet.service.RefundService;
+import edu.icet.util.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +38,7 @@ public class RefundServiceImpl implements RefundService {
                 Appointment appointment = appointmentRepo.findById(payment.getAppointmentId())
                         .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-                if (!"CANCELLED".equalsIgnoreCase(appointment.getStatus())) {
+                if (appointment.getStatus() != AppointmentStatus.CANCELLED) {
                     throw new RuntimeException("Refunds allowed only for cancelled appointments");
                 }
             }

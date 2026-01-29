@@ -1,5 +1,6 @@
 package edu.icet.entity;
 
+import edu.icet.util.AppointmentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,5 +30,6 @@ public class Appointment {
     private LocalDateTime appointmentTime;
     private Integer appointmentNo;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatus status;
 }

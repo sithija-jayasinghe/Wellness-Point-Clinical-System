@@ -14,4 +14,5 @@ public class AppointmentDto {
     private Long patientId;
     private LocalDateTime appointmentTime;
     private Integer appointmentNo; // This will be set by the backend
+    private String status;
 }
