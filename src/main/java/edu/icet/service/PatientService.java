@@ -1,14 +1,12 @@
 package edu.icet.service;
 
-import edu.icet.entity.Patient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import edu.icet.dto.PatientDto;
 import java.util.List;
 
 public interface PatientService {
-    Patient savePatient(Patient patient);
-    List<Patient> getAllPatients();
+    void addPatient(PatientDto patientDto);
+    List<PatientDto> getAllPatients();
+    PatientDto getPatientById(Long id);
+    void updatePatient(Long id, PatientDto patientDto);
+    void deletePatient(Long id);
 }
-
-
