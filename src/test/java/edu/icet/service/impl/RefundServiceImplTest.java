@@ -8,6 +8,7 @@ import edu.icet.entity.Refund;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.RefundRepository;
+import edu.icet.util.AppointmentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,7 +59,7 @@ class RefundServiceImplTest {
 
         appointment = new Appointment();
         appointment.setId(1L);
-        appointment.setStatus("CANCELLED");
+        appointment.setStatus(AppointmentStatus.CANCELLED);
     }
 
     @Test
@@ -74,7 +75,7 @@ class RefundServiceImplTest {
 
     @Test
     void addRefund_NotCancelled_ThrowsException() {
-        appointment.setStatus("COMPLETED");
+        appointment.setStatus(AppointmentStatus.COMPLETED);
 
         when(mapper.convertValue(refundDto, Refund.class)).thenReturn(refund);
         when(paymentRepo.findById(1L)).thenReturn(Optional.of(payment));

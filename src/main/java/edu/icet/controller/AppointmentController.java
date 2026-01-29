@@ -38,4 +38,14 @@ public class AppointmentController {
     public AppointmentDto updateAppointment(@PathVariable Long id, @RequestBody AppointmentDto appointmentDto) {
         return service.updateAppointment(id, appointmentDto);
     }
+
+    @PutMapping("/{id}/cancel")
+    public void cancelAppointment(@PathVariable Long id) {
+        service.cancelAppointment(id);
+    }
+
+    @PutMapping("/{id}/complete")
+    public void completeAppointment(@PathVariable Long id) {
+        service.completeAppointment(id);
+    }
 }

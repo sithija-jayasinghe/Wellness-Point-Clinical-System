@@ -10,9 +10,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class DoctorScheduleDto {
     private Long id;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private Long doctorId;
+    private Long clinicId;
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
     private Integer maxPatients;
-    // Add doctorId if you plan to link it later
 }
 
