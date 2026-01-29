@@ -2,7 +2,9 @@ package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.PaymentDto;
+import edu.icet.entity.Appointment;
 import edu.icet.entity.Payment;
+import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +19,25 @@ import java.util.Optional;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepo;
+    private final AppointmentRepository appointmentRepo;
     private final ObjectMapper mapper;
 
     @Override
     public void addPayment(PaymentDto paymentDto) {
         Payment payment = mapper.convertValue(paymentDto, Payment.class);
+
+        // Validate payment amount against doctor's consultation fee
+        if (payment.getAppointmentId() != null) {
+            Appointment appointment = appointmentRepo.findById(payment.getAppointmentId())
+                    .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+            if (appointment.getDoctor() != null) {
+                if (payment.getAmount() != appointment.getDoctor().getConsultationFee()) {
+                    throw new RuntimeException("Payment amount must match the doctor's consultation fee: " + appointment.getDoctor().getConsultationFee());
+                }
+            }
+        }
+
         paymentRepo.save(payment);
     }
 

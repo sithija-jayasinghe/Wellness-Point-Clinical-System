@@ -2,8 +2,10 @@ package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.RefundDto;
+import edu.icet.entity.Appointment;
 import edu.icet.entity.Payment;
 import edu.icet.entity.Refund;
+import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.RefundRepository;
 import edu.icet.service.RefundService;
@@ -20,6 +22,7 @@ public class RefundServiceImpl implements RefundService {
 
     private final RefundRepository refundRepo;
     private final PaymentRepository paymentRepo;
+    private final AppointmentRepository appointmentRepo;
     private final ObjectMapper mapper;
 
     @Override
@@ -27,7 +30,18 @@ public class RefundServiceImpl implements RefundService {
         Refund refund = mapper.convertValue(refundDto, Refund.class);
         if (refundDto.getPayment() != null && refundDto.getPayment().getPaymentId() != null) {
             Payment payment = paymentRepo.findById(refundDto.getPayment().getPaymentId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+            // Validate that refund is only for cancelled appointments
+            if (payment.getAppointmentId() != null) {
+                Appointment appointment = appointmentRepo.findById(payment.getAppointmentId())
+                        .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+                if (!"CANCELLED".equalsIgnoreCase(appointment.getStatus())) {
+                    throw new RuntimeException("Refunds allowed only for cancelled appointments");
+                }
+            }
+
             refund.setPayment(payment);
         }
         refundRepo.save(refund);

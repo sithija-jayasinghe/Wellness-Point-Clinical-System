@@ -10,18 +10,24 @@ import java.time.LocalDateTime;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "appointment")
 public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // RELATIONSHIP CONNECTED HERE
     @ManyToOne
-    @JoinColumn(name = "schedule_id") // This creates the Foreign Key column in the DB
-    private DoctorSchedule doctorSchedule;
+    @JoinColumn(name = "doctor_id")
+    private Doctor doctor;
 
-    private Long patientId; // You can do the same for Patient if you have a Patient entity
+    private Long patientId;
+
+    @ManyToOne
+    @JoinColumn(name = "schedule_id")
+    private DoctorSchedule doctorSchedule;
 
     private LocalDateTime appointmentTime;
     private Integer appointmentNo;
+
+    private String status;
 }
