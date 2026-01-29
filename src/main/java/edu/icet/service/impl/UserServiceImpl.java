@@ -6,6 +6,7 @@ import edu.icet.entity.*;
 import edu.icet.repository.*;
 import edu.icet.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,13 +21,29 @@ public class UserServiceImpl implements UserService {
     private final UserRoleRepository userRoleRepository;
     private final UserClinicRepository userClinicRepository;
     private final ObjectMapper mapper;
+    private final PasswordEncoder passwordEncoder; // Security එක Inject කරගන්නවා
 
     @Override
     public void registerUser(UserRegistrationDto dto) {
+
+        // --- Validation Logic ---
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email already exists!");
+        }
+        if (userRepository.existsByUsername(dto.getUsername())) {
+            throw new RuntimeException("Username already exists!");
+        }
+
+        // DTO -> Entity Convert
         User user = mapper.convertValue(dto, User.class);
+
+        // --- Security Logic: Password Encrypt කරනවා ---
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
         user.setStatus("ACTIVE");
         User savedUser = userRepository.save(user);
 
+        // Role Assign කිරීම
         Role role = roleRepository.findByName(dto.getRole())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
@@ -35,6 +52,7 @@ public class UserServiceImpl implements UserService {
         userRole.setRole(role);
         userRoleRepository.save(userRole);
 
+        // Clinic Assign කිරීම
         Clinic clinic = clinicRepository.findById(dto.getClinicId())
                 .orElseThrow(() -> new RuntimeException("Clinic not found"));
 
@@ -47,7 +65,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public Boolean validateUser(String username, String password) {
         User user = userRepository.findByUsername(username).orElse(null);
-        return user != null && user.getPassword().equals(password);
+
+        // --- Security Logic: Password Match කරලා බලනවා ---
+        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -63,8 +86,9 @@ public class UserServiceImpl implements UserService {
             user.setUsername(dto.getUsername());
             user.setEmail(dto.getEmail());
 
+            // Password එක වෙනස් කරනවා නම් ඒකත් Encrypt කරන්න ඕනේ
             if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-                user.setPassword(dto.getPassword());
+                user.setPassword(passwordEncoder.encode(dto.getPassword()));
             }
 
             userRepository.save(user);
