@@ -3,7 +3,7 @@ package edu.icet.controller;
 import edu.icet.dto.LoginRequest;
 import edu.icet.dto.UserRegistrationDto;
 import edu.icet.entity.User;
-import edu.icet.service.impl.UserServiceImpl;
+import edu.icet.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ import java.util.List;
 public class UserController {
 
     @Autowired
-    private final UserServiceImpl userService;
+    private final UserService userService;
 
     @PostMapping("/register")
     public void registerUser(@RequestBody UserRegistrationDto userDto) {
