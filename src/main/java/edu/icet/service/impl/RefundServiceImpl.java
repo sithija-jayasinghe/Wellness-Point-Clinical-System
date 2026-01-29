@@ -2,7 +2,9 @@ package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.RefundDto;
+import edu.icet.entity.Payment;
 import edu.icet.entity.Refund;
+import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.RefundRepository;
 import edu.icet.service.RefundService;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +19,17 @@ import java.util.Optional;
 public class RefundServiceImpl implements RefundService {
 
     private final RefundRepository refundRepo;
+    private final PaymentRepository paymentRepo;
     private final ObjectMapper mapper;
 
     @Override
     public void addRefund(RefundDto refundDto) {
         Refund refund = mapper.convertValue(refundDto, Refund.class);
+        if (refundDto.getPayment() != null && refundDto.getPayment().getPaymentId() != null) {
+            Payment payment = paymentRepo.findById(refundDto.getPayment().getPaymentId())
+                    .orElse(null);
+            refund.setPayment(payment);
+        }
         refundRepo.save(refund);
     }
 
