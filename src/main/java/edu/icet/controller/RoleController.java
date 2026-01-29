@@ -1,9 +1,8 @@
 package edu.icet.controller;
 
 import edu.icet.entity.Role;
-import edu.icet.repository.RoleRepository;
+import edu.icet.service.RoleService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,16 +13,20 @@ import java.util.List;
 @CrossOrigin
 public class RoleController {
 
-    @Autowired
-    private final RoleRepository roleRepository;
+    private final RoleService roleService;
 
     @PostMapping("/add")
-    public void addRole(@RequestBody Role role) {
-        roleRepository.save(role);
+    public void createRole(@RequestBody Role role) {
+        roleService.createRole(role);
     }
 
     @GetMapping("/get-all")
     public List<Role> getAllRoles() {
-        return roleRepository.findAll();
+        return roleService.getAllRoles();
+    }
+
+    @PutMapping("/add-permission")
+    public void addPermissionToRole(@RequestParam String roleName, @RequestParam String permissionCode) {
+        roleService.addPermissionToRole(roleName, permissionCode);
     }
 }

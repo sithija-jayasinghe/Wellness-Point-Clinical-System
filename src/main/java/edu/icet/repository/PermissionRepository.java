@@ -2,8 +2,11 @@ package edu.icet.repository;
 
 import edu.icet.entity.Permission;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
-@Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long> {
+
+    boolean existsByCode(String code);
+
+    Optional<Permission> findByCode(String code);
 }
