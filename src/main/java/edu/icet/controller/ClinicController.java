@@ -1,8 +1,9 @@
 package edu.icet.controller;
 
 import edu.icet.entity.Clinic;
-import edu.icet.repository.ClinicRepository;
+import edu.icet.service.ClinicService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,34 +14,26 @@ import java.util.List;
 @CrossOrigin
 public class ClinicController {
 
-    private final ClinicRepository clinicRepository;
+    @Autowired
+    private final ClinicService clinicService;
 
-    @PostMapping
-    public Clinic createClinic(@RequestBody Clinic clinic) {
-        return clinicRepository.save(clinic);
+    @PostMapping("/add")
+    public void addClinic(@RequestBody Clinic clinic) {
+        clinicService.addClinic(clinic);
     }
 
-    @GetMapping
+    @GetMapping("/get-all")
     public List<Clinic> getAllClinics() {
-        return clinicRepository.findAll();
+        return clinicService.getAllClinics();
     }
 
-    @PutMapping("/{id}")
-    public Clinic updateClinic(@PathVariable Long id, @RequestBody Clinic clinicDetails) {
-        Clinic clinic = clinicRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Clinic not found"));
-
-        clinic.setName(clinicDetails.getName());
-        clinic.setAddress(clinicDetails.getAddress());
-        clinic.setPhone(clinicDetails.getPhone());
-        clinic.setStatus(clinicDetails.getStatus());
-
-        return clinicRepository.save(clinic);
+    @PutMapping("/update/{id}")
+    public void updateClinic(@PathVariable Long id, @RequestBody Clinic clinic) {
+        clinicService.updateClinic(id, clinic);
     }
 
-    @DeleteMapping("/{id}")
-    public String deleteClinic(@PathVariable Long id) {
-        clinicRepository.deleteById(id);
-        return "Clinic Deleted Successfully!";
+    @DeleteMapping("/delete/{id}")
+    public void deleteClinic(@PathVariable Long id) {
+        clinicService.deleteClinic(id);
     }
 }

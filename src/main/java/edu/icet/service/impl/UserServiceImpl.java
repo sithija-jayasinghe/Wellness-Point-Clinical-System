@@ -1,30 +1,49 @@
 package edu.icet.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.UserRegistrationDto;
 import edu.icet.entity.*;
 import edu.icet.repository.*;
+import edu.icet.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final ClinicRepository clinicRepository;
     private final UserRoleRepository userRoleRepository;
     private final UserClinicRepository userClinicRepository;
+    private final ObjectMapper mapper;
+    private final PasswordEncoder passwordEncoder; // Security එක Inject කරගන්නවා
 
+    @Override
     public void registerUser(UserRegistrationDto dto) {
-        User user = new User();
-        user.setUsername(dto.getUsername());
-        user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+
+        // --- Validation Logic ---
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email already exists!");
+        }
+        if (userRepository.existsByUsername(dto.getUsername())) {
+            throw new RuntimeException("Username already exists!");
+        }
+
+        // DTO -> Entity Convert
+        User user = mapper.convertValue(dto, User.class);
+
+        // --- Security Logic: Password Encrypt කරනවා ---
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
         user.setStatus("ACTIVE");
         User savedUser = userRepository.save(user);
 
+        // Role Assign කිරීම
         Role role = roleRepository.findByName(dto.getRole())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
@@ -33,6 +52,7 @@ public class UserServiceImpl {
         userRole.setRole(role);
         userRoleRepository.save(userRole);
 
+        // Clinic Assign කිරීම
         Clinic clinic = clinicRepository.findById(dto.getClinicId())
                 .orElseThrow(() -> new RuntimeException("Clinic not found"));
 
@@ -42,34 +62,40 @@ public class UserServiceImpl {
         userClinicRepository.save(userClinic);
     }
 
+    @Override
     public Boolean validateUser(String username, String password) {
-        User user = userRepository.findByUsername(username)
-                .orElse(null);
+        User user = userRepository.findByUsername(username).orElse(null);
 
-        if (user == null) {
-            return false;
+        // --- Security Logic: Password Match කරලා බලනවා ---
+        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+            return true;
         }
-        return user.getPassword().equals(password);
+        return false;
     }
 
+    @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    public User updateUser(Long id, UserRegistrationDto dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    @Override
+    public void updateUser(Long id, UserRegistrationDto dto) {
+        if (userRepository.existsById(id)) {
+            User user = userRepository.findById(id).get();
 
-        user.setUsername(dto.getUsername());
-        user.setEmail(dto.getEmail());
+            user.setUsername(dto.getUsername());
+            user.setEmail(dto.getEmail());
 
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            user.setPassword(dto.getPassword());
+            // Password එක වෙනස් කරනවා නම් ඒකත් Encrypt කරන්න ඕනේ
+            if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            }
+
+            userRepository.save(user);
         }
-
-        return userRepository.save(user);
     }
 
+    @Override
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }

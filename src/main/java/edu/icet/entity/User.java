@@ -1,11 +1,12 @@
 package edu.icet.entity;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Data
 @Table(name = "user")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User {
 
     @Id
