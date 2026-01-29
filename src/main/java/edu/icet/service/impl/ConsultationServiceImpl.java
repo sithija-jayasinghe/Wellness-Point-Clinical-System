@@ -29,11 +29,30 @@ public class ConsultationServiceImpl implements ConsultationService {
         if (consultationDto.getAppointmentId() != null) {
             Appointment appointment = appointmentRepo.findById(consultationDto.getAppointmentId())
                     .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+            // Rule: Consultation allowed only for BOOKED appointments
+            if ("CANCELLED".equalsIgnoreCase(appointment.getStatus()) || "COMPLETED".equalsIgnoreCase(appointment.getStatus())) {
+                 throw new RuntimeException("Consultation not allowed. Appointment is CANCELLED or COMPLETED.");
+            }
+            // Optional: Strictly enforce BOOKED
+            if (!"BOOKED".equalsIgnoreCase(appointment.getStatus())) {
+                // Determine if we should be strict or just check for negative statuses.
+                // The prompt says: "Consultation allowed only for BOOKED appointments".
+                 throw new RuntimeException("Consultation allowed only for BOOKED appointments.");
+            }
+
             consultation.setAppointment(appointment);
+
+            Consultation saved = consultationRepo.save(consultation);
+
+            // Auto-Complete: After consultation is saved -> update appointment status to COMPLETED
+            appointment.setStatus("COMPLETED");
+            appointmentRepo.save(appointment);
+
+            return mapper.convertValue(saved, ConsultationDto.class);
         }
 
-        Consultation saved = consultationRepo.save(consultation);
-        return mapper.convertValue(saved, ConsultationDto.class);
+        throw new RuntimeException("Appointment ID is required for consultation");
     }
 
     @Override

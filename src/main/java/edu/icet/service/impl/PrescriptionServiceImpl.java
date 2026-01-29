@@ -25,6 +25,11 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     public PrescriptionDto savePrescription(PrescriptionDto prescriptionDto) {
+        // Validate that prescription items are not empty
+        if (prescriptionDto.getPrescriptionItems() == null || prescriptionDto.getPrescriptionItems().isEmpty()) {
+            throw new RuntimeException("Prescription must contain at least one item.");
+        }
+
         Prescription prescription = mapper.convertValue(prescriptionDto, Prescription.class);
 
         if (prescriptionDto.getConsultationId() != null) {
