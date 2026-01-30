@@ -33,8 +33,13 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         Prescription prescription = mapper.convertValue(prescriptionDto, Prescription.class);
 
         if (prescriptionDto.getConsultationId() != null) {
+            // Check if a prescription already exists for this consultation
+            if (prescriptionRepo.findByConsultationConsultationId(prescriptionDto.getConsultationId()).isPresent()) {
+                throw new RuntimeException("A prescription already exists for this consultation.");
+            }
+
             Consultation consultation = consultationRepo.findById(prescriptionDto.getConsultationId())
-                    .orElseThrow(() -> new RuntimeException("Consultation not found"));
+                    .orElseThrow(() -> new RuntimeException("Consultation not found with ID: " + prescriptionDto.getConsultationId()));
             prescription.setConsultation(consultation);
         }
 

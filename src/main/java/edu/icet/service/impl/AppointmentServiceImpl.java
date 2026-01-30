@@ -133,15 +133,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointmentRepo.save(appointment);
 
+        // Retrieve userId from patient
+        Long userId = null;
+        if (appointment.getPatientId() != null) {
+            Optional<Patient> patientOpt = patientRepo.findById(appointment.getPatientId());
+            if (patientOpt.isPresent()) {
+                userId = patientOpt.get().getUserId();
+            }
+        }
+
         // Audit Log
         AuditLogDto auditLog = new AuditLogDto();
-        // Assuming the patient is the user related to the appointment, or potentially the doctor.
-        // Since we don't have authentication context, we'll log the patientId as usage reference if applicable,
-        // or just leave userId null if strictly mapping to User table id which might not work for Patient.
-        // But for "User" field in log, I will try to supply the patientId if possible contextually,
-        // however AuditLog.userId is numeric. If Patient is not User, this is problematic.
-        // I will default to null to be safe and avoid FK constraint violations.
-        auditLog.setUserId(null);
+        auditLog.setUserId(userId);
         auditLog.setAction("CONSULTATION_COMPLETED");
         auditLog.setEntity("Appointment");
         auditLog.setEntityId(id);
