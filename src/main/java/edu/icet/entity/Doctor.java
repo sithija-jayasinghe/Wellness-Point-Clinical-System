@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "doctors")
+@Table(name = "doctor")
 public class Doctor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,10 +18,8 @@ public class Doctor {
     @OneToOne
     @JoinColumn(name = "userId")
     private User user;
-
     private String name;
     private String specialization;
     private double consultationFee;
-    private String contact;
     private String status;
 }
