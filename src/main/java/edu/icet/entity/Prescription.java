@@ -1,5 +1,6 @@
 package edu.icet.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,5 +27,6 @@ public class Prescription {
     private LocalDate issuedDate;
 
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<PrescriptionItem> prescriptionItems;
 }

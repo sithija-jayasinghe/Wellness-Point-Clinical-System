@@ -5,8 +5,10 @@ import edu.icet.dto.AuditLogDto;
 import edu.icet.dto.PaymentDto;
 import edu.icet.entity.Appointment;
 import edu.icet.entity.Payment;
+import edu.icet.entity.Patient;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
+import edu.icet.repository.PatientRepository;
 import edu.icet.service.AuditLogService;
 import edu.icet.service.PaymentService;
 import edu.icet.util.AppointmentStatus;
@@ -24,12 +26,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepo;
     private final AppointmentRepository appointmentRepo;
+    private final PatientRepository patientRepo;
     private final AuditLogService auditLogService;
     private final ObjectMapper mapper;
 
     @Override
     public void addPayment(PaymentDto paymentDto) {
         Payment payment = mapper.convertValue(paymentDto, Payment.class);
+        Long userId = null;
 
         // Validate payment amount against doctor's consultation fee
         if (payment.getAppointmentId() != null) {
@@ -45,13 +49,21 @@ public class PaymentServiceImpl implements PaymentService {
                     throw new RuntimeException("Payment amount must match the doctor's consultation fee: " + appointment.getDoctor().getConsultationFee());
                 }
             }
+
+            // Attempt to get userId from the patient associated with the appointment
+            if (appointment.getPatientId() != null) {
+                Optional<Patient> patientOpt = patientRepo.findById(appointment.getPatientId());
+                if (patientOpt.isPresent()) {
+                    userId = patientOpt.get().getUserId();
+                }
+            }
         }
 
         Payment savedPayment = paymentRepo.save(payment);
 
         // Audit Log
         AuditLogDto auditLog = new AuditLogDto();
-        auditLog.setUserId(null); // System action or unknown user context
+        auditLog.setUserId(userId); // Use the patient's userId if available
         auditLog.setAction("PAYMENT_MADE");
         auditLog.setEntity("Payment");
         auditLog.setEntityId(savedPayment.getPaymentId());

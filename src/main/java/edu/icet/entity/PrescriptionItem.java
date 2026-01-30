@@ -1,5 +1,6 @@
 package edu.icet.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class PrescriptionItem {
 
     @ManyToOne
     @JoinColumn(name = "prescription_id")
+    @JsonBackReference
     private Prescription prescription;
 
     @Column(name = "medicine_name")
@@ -25,4 +27,8 @@ public class PrescriptionItem {
 
     private String dosage;
     private String duration;
+
+    public Long getPrescriptionId() {
+        return prescription != null ? prescription.getPrescriptionId() : null;
+    }
 }

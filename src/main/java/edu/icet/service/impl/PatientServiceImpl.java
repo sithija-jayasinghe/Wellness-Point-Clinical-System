@@ -44,10 +44,18 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public void updatePatient(Long id, PatientDto patientDto) {
-        if (patientRepo.existsById(id)) {
-            Patient patient = mapper.convertValue(patientDto, Patient.class);
-            patient.setId(id);
-            patientRepo.save(patient);
+        Optional<Patient> existingOpt = patientRepo.findById(id);
+        if (existingOpt.isPresent()) {
+            Patient existing = existingOpt.get();
+            Patient updatedInfo = mapper.convertValue(patientDto, Patient.class);
+
+            // Preserve userId if not provided in DTO
+            if (updatedInfo.getUserId() == null) {
+                updatedInfo.setUserId(existing.getUserId());
+            }
+
+            updatedInfo.setId(id);
+            patientRepo.save(updatedInfo);
         }
     }
 

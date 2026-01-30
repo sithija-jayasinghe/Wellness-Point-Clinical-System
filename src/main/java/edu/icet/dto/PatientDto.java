@@ -9,10 +9,10 @@ import java.time.LocalDate;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PatientDto {
     private Long id;
-    private Long userId;
     private String name;
     private String nic;
     private String phone;
     private LocalDate dob;
     private String gender;
+    private Long userId;
 }
