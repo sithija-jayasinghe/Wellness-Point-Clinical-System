@@ -1,5 +1,6 @@
 package edu.icet.entity;
 
+import edu.icet.util.DoctorStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,5 +22,7 @@ public class Doctor {
     private String name;
     private String specialization;
     private double consultationFee;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private DoctorStatus status;
 }

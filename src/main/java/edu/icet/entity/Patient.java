@@ -1,9 +1,7 @@
 package edu.icet.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import edu.icet.util.Gender;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -18,8 +16,9 @@ public class Patient {
     private String nic;
     private String phone;
     private LocalDate dob;
-    private String gender;
 
-    // Link to User for notifications/login
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
     private Long userId;
 }

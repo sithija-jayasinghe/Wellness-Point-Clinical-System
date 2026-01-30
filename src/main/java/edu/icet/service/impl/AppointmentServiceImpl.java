@@ -61,7 +61,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         // 3. MANUALLY CONNECT THE RELATIONSHIP
         appointment.setDoctorSchedule(schedule);
         appointment.setAppointmentNo(newAppointmentNo);
-        appointment.setStatus(AppointmentStatus.BOOKED); // Default status
+        appointment.setStatus(AppointmentStatus.BOOKED);
 
         Appointment savedAppointment = appointmentRepo.save(appointment);
 

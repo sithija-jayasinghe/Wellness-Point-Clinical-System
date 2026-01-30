@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Maps to notification_id
+    private Long id;
 
-    private Long userId; // Maps to user_id (FK)
+    private Long userId;
 
     private String message;
 
