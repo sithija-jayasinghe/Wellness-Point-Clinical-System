@@ -66,7 +66,7 @@ public class UserServiceImpl implements UserService {
     public Boolean validateUser(String username, String password) {
         User user = userRepository.findByUsername(username).orElse(null);
 
-        // --- Security Logic: Password Match කරලා බලනවා ---
+
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             return true;
         }
@@ -86,7 +86,7 @@ public class UserServiceImpl implements UserService {
             user.setUsername(dto.getUsername());
             user.setEmail(dto.getEmail());
 
-            // Password එක වෙනස් කරනවා නම් ඒකත් Encrypt කරන්න ඕනේ
+
             if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
             }

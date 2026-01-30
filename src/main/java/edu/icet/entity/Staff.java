@@ -15,14 +15,11 @@ import lombok.NoArgsConstructor;
 public class Staff {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Maps to staff_id
+    private Long id;
 
-    // Foreign Key linking to a User account
     private Long userId;
 
-    // Role (e.g., Nurse, Receptionist)
     private String designation;
 
-    // ACTIVE / INACTIVE
     private String status;
 }

@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
-    // Basic finders typical for auditing
     List<AuditLog> findByUserId(Long userId);
 }

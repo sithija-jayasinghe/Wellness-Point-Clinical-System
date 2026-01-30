@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface StaffRepository extends JpaRepository<Staff, Long> {
-    // Custom finders if needed
     List<Staff> findByStatus(String status);
 }

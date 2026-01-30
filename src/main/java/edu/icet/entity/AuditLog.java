@@ -14,15 +14,15 @@ import java.time.LocalDateTime;
 public class AuditLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Maps to audit_id
+    private Long id;
 
-    private Long userId; // Maps to user_id (Actor)
+    private Long userId;
 
-    private String action; // Action performed (e.g., "CREATED", "DELETED")
+    private String action;
 
-    private String entity; // Affected entity (e.g., "Appointment", "Patient")
+    private String entity;
 
-    private Long entityId; // Entity identifier
+    private Long entityId;
 
     private LocalDateTime timestamp;
 }

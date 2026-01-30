@@ -1,5 +1,7 @@
 package edu.icet.entity;
 
+import edu.icet.util.PaymentMethod;
+import edu.icet.util.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,7 +29,9 @@ public class Payment {
     private Long appointmentId;
 
     @Column(name = "payment_method")
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
 }
