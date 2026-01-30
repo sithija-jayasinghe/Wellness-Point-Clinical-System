@@ -17,7 +17,7 @@ public class Doctor {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "user_id")
     private User user;
     private String name;
     private String specialization;
