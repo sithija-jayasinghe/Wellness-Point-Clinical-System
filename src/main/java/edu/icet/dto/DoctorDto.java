@@ -10,6 +10,5 @@ public class DoctorDto {
     private String name;
     private String specialization;
     private double consultationFee;
-    private String contact;
     private String status;
 }
