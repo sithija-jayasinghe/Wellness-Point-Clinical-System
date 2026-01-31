@@ -2,77 +2,96 @@ package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.AppointmentDto;
+import edu.icet.dto.AuditLogDto;
+import edu.icet.dto.NotificationDto;
 import edu.icet.entity.Appointment;
 import edu.icet.entity.DoctorSchedule;
 import edu.icet.entity.Patient;
+import edu.icet.exception.BookingFullException;
+import edu.icet.exception.InvalidOperationException;
+import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.DoctorScheduleRepository;
 import edu.icet.repository.PatientRepository;
 import edu.icet.service.AppointmentService;
 import edu.icet.service.AuditLogService;
 import edu.icet.service.NotificationService;
-import edu.icet.dto.AuditLogDto;
-import edu.icet.dto.NotificationDto;
 import edu.icet.util.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
 
+    private static final String APPOINTMENT_NOT_FOUND = "Appointment not found";
+    private static final String SCHEDULE_NOT_FOUND = "Schedule not found";
+
     private final AppointmentRepository appointmentRepo;
     private final DoctorScheduleRepository scheduleRepo;
-    private final PatientRepository patientRepo; // Inject PatientRepo
-    private final NotificationService notificationService; // Inject NotificationService
+    private final PatientRepository patientRepo;
+    private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final ObjectMapper mapper;
 
     @Override
+    @Transactional
     public AppointmentDto bookAppointment(AppointmentDto dto) {
-        // 1. Retrieve the Schedule
-        DoctorSchedule schedule = scheduleRepo.findById(dto.getScheduleId())
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
 
-        // Validation logic
+        if (dto.getScheduleId() == null) {
+            throw new IllegalArgumentException("Schedule ID is required");
+        }
+        if (dto.getPatientId() == null) {
+            throw new IllegalArgumentException("Patient ID is required");
+        }
+        if (dto.getAppointmentTime() == null) {
+            throw new IllegalArgumentException("Appointment time is required");
+        }
+
+        // 1) Retrieve schedule
+        DoctorSchedule schedule = scheduleRepo.findById(dto.getScheduleId())
+                .orElseThrow(() -> new ResourceNotFoundException(SCHEDULE_NOT_FOUND));
+
+        // 2) Validate time within schedule
         if (dto.getAppointmentTime().isBefore(schedule.getStartDateTime()) ||
                 dto.getAppointmentTime().isAfter(schedule.getEndDateTime())) {
-            throw new RuntimeException("Appointment time falls outside the doctor's schedule.");
+            throw new InvalidOperationException("Appointment time falls outside the doctor's schedule");
         }
 
-        // Count logic
+        // 3) Capacity check
         long currentCount = appointmentRepo.countByDoctorScheduleId(dto.getScheduleId());
         if (currentCount >= schedule.getMaxPatients()) {
-            throw new RuntimeException("Booking Full");
+            throw new BookingFullException("Booking full for this schedule");
         }
 
-        // Logic for Queue Number
+        // 4) Queue number (appointmentNo)
         Integer maxAppointmentNo = appointmentRepo.findMaxAppointmentNo(dto.getScheduleId());
         int newAppointmentNo = (maxAppointmentNo == null) ? 1 : maxAppointmentNo + 1;
 
-        // 2. Map DTO to Entity
+        // 5) Map DTO -> Entity
         Appointment appointment = mapper.convertValue(dto, Appointment.class);
 
-        // 3. MANUALLY CONNECT THE RELATIONSHIP
+        // 6) Link schedule and set system fields
         appointment.setDoctorSchedule(schedule);
         appointment.setAppointmentNo(newAppointmentNo);
         appointment.setStatus(AppointmentStatus.BOOKED);
 
         Appointment savedAppointment = appointmentRepo.save(appointment);
 
-        // Notify Patient
-        Optional<Patient> patientOpt = patientRepo.findById(dto.getPatientId());
-        if (patientOpt.isPresent() && patientOpt.get().getUserId() != null) {
-            NotificationDto notif = new NotificationDto();
-            notif.setUserId(patientOpt.get().getUserId());
-            notif.setMessage("Your appointment is booked successfully. No: " + newAppointmentNo);
-            notificationService.sendNotification(notif);
-        }
+        // 7) Notify patient (safe optional usage)
+        patientRepo.findById(dto.getPatientId())
+                .filter(p -> p.getUserId() != null)
+                .ifPresent(p -> {
+                    NotificationDto notif = new NotificationDto();
+                    notif.setUserId(p.getUserId());
+                    notif.setMessage("Your appointment is booked successfully. No: " + newAppointmentNo);
+                    notificationService.sendNotification(notif);
+                });
 
         return mapToDto(savedAppointment);
     }
@@ -87,47 +106,53 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto getAppointmentById(Long id) {
-        return appointmentRepo.findById(id)
-                .map(this::mapToDto)
-                .orElse(null);
+        Appointment appointment = appointmentRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
+        return mapToDto(appointment);
     }
 
     @Override
     public void deleteAppointment(Long id) {
-        if (appointmentRepo.existsById(id)) {
-            appointmentRepo.deleteById(id);
+        if (!appointmentRepo.existsById(id)) {
+            throw new ResourceNotFoundException(APPOINTMENT_NOT_FOUND);
         }
+        appointmentRepo.deleteById(id);
     }
 
     @Override
+    @Transactional
     public void cancelAppointment(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
-            throw new RuntimeException("Cannot cancel a completed appointment.");
+            throw new InvalidOperationException(APPOINTMENT_NOT_FOUND);
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepo.save(appointment);
 
-        // Notify Patient
-        Optional<Patient> patientOpt = patientRepo.findById(appointment.getPatientId());
-        if (patientOpt.isPresent() && patientOpt.get().getUserId() != null) {
-            NotificationDto notif = new NotificationDto();
-            notif.setUserId(patientOpt.get().getUserId());
-            notif.setMessage("Your appointment #" + appointment.getAppointmentNo() + " has been cancelled.");
-            notificationService.sendNotification(notif);
+        // Notify patient
+        if (appointment.getPatientId() != null) {
+            patientRepo.findById(appointment.getPatientId())
+                    .filter(p -> p.getUserId() != null)
+                    .ifPresent(p -> {
+                        NotificationDto notif = new NotificationDto();
+                        notif.setUserId(p.getUserId());
+                        notif.setMessage("Your appointment #" + appointment.getAppointmentNo() + " has been cancelled.");
+                        notificationService.sendNotification(notif);
+                    });
         }
     }
 
     @Override
+    @Transactional
     public void completeAppointment(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
-            throw new RuntimeException("Cannot complete a cancelled appointment.");
+            throw new InvalidOperationException("Cannot complete a cancelled appointment");
         }
 
         appointment.setStatus(AppointmentStatus.COMPLETED);
@@ -136,13 +161,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Retrieve userId from patient
         Long userId = null;
         if (appointment.getPatientId() != null) {
-            Optional<Patient> patientOpt = patientRepo.findById(appointment.getPatientId());
-            if (patientOpt.isPresent()) {
-                userId = patientOpt.get().getUserId();
-            }
+            Patient patient = patientRepo.findById(appointment.getPatientId()).orElse(null);
+            if (patient != null) userId = patient.getUserId();
         }
 
-        // Audit Log
+        // Audit log
         AuditLogDto auditLog = new AuditLogDto();
         auditLog.setUserId(userId);
         auditLog.setAction("CONSULTATION_COMPLETED");
@@ -153,28 +176,26 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional
     public AppointmentDto updateAppointment(Long id, AppointmentDto dto) {
-        Optional<Appointment> existingOpt = appointmentRepo.findById(id);
-        if (existingOpt.isPresent()) {
-            Appointment existing = existingOpt.get();
+        Appointment existing = appointmentRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
-            // If the schedule ID changed, we need to fetch the new schedule
-            if (dto.getScheduleId() != null) {
-                DoctorSchedule newSchedule = scheduleRepo.findById(dto.getScheduleId())
-                        .orElseThrow(() -> new RuntimeException("Schedule not found"));
-                existing.setDoctorSchedule(newSchedule);
-            }
-
-            existing.setAppointmentTime(dto.getAppointmentTime());
-            // Update other fields as needed...
-
-            Appointment saved = appointmentRepo.save(existing);
-            return mapToDto(saved);
+        // If schedule changed, fetch and attach
+        if (dto.getScheduleId() != null) {
+            DoctorSchedule newSchedule = scheduleRepo.findById(dto.getScheduleId())
+                    .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
+            existing.setDoctorSchedule(newSchedule);
         }
-        return null;
+
+        if (dto.getAppointmentTime() != null) {
+            existing.setAppointmentTime(dto.getAppointmentTime());
+        }
+
+        Appointment saved = appointmentRepo.save(existing);
+        return mapToDto(saved);
     }
 
-    // Helper method to Map Entity -> DTO and extract the ID
     private AppointmentDto mapToDto(Appointment appointment) {
         AppointmentDto dto = mapper.convertValue(appointment, AppointmentDto.class);
         if (appointment.getDoctorSchedule() != null) {

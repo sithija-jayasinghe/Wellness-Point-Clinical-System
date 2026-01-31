@@ -1,11 +1,8 @@
 package edu.icet.controller;
 
 import edu.icet.dto.DoctorDto;
-import edu.icet.entity.Doctor;
 import edu.icet.service.DoctorService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,8 +13,7 @@ import java.util.List;
 @RequestMapping("/api/doctors")
 public class DoctorController {
 
-    @Autowired
-    private DoctorService doctorService;
+    private final DoctorService doctorService;
 
     @PostMapping("/register")
     public void addDoctor(@RequestBody DoctorDto doctorDto) {

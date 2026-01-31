@@ -5,7 +5,6 @@ import edu.icet.dto.UserRegistrationDto;
 import edu.icet.entity.User;
 import edu.icet.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.List;
 @CrossOrigin
 public class UserController {
 
-    @Autowired
     private final UserService userService;
 
     @PostMapping("/register")
@@ -26,7 +24,10 @@ public class UserController {
 
     @PostMapping("/login")
     public String loginUser(@RequestBody LoginRequest loginRequest) {
-        Boolean isValid = userService.validateUser(loginRequest.getUsername(), loginRequest.getPassword());
+        boolean isValid = userService.validateUser(
+                loginRequest.getUsername(),
+                loginRequest.getPassword()
+        );
         return isValid ? "Login Success!" : "Invalid Username or Password";
     }
 

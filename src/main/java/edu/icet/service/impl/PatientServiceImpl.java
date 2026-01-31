@@ -1,14 +1,11 @@
 package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.icet.dto.DoctorDto;
 import edu.icet.dto.PatientDto;
-import edu.icet.entity.Doctor;
 import edu.icet.entity.Patient;
 import edu.icet.repository.PatientRepository;
 import edu.icet.service.PatientService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
