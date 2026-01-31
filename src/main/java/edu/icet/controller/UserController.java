@@ -4,6 +4,7 @@ import edu.icet.dto.LoginRequest;
 import edu.icet.dto.UserRegistrationDto;
 import edu.icet.entity.User;
 import edu.icet.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public void registerUser(@RequestBody UserRegistrationDto userDto) {
+    public void registerUser(@Valid @RequestBody UserRegistrationDto userDto) {
         userService.registerUser(userDto);
     }
 
@@ -37,7 +38,7 @@ public class UserController {
     }
 
     @PutMapping("/update/{id}")
-    public void updateUser(@PathVariable Long id, @RequestBody UserRegistrationDto userDto) {
+    public void updateUser(@PathVariable Long id, @Valid @RequestBody UserRegistrationDto userDto) {
         userService.updateUser(id, userDto);
     }
 
