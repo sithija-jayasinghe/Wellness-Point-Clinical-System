@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.NotificationDto;
 import edu.icet.entity.Notification;
 import edu.icet.repository.NotificationRepository;
+import edu.icet.repository.UserRepository;
+import edu.icet.service.EmailService;
 import edu.icet.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,9 +18,12 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
     private final ObjectMapper mapper;
 
     // ... existing methods (send, getAll, etc.) ...
@@ -29,6 +35,20 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setSentAt(LocalDateTime.now());
         }
         Notification saved = notificationRepository.save(notification);
+
+        // Attempt to send email
+        if (dto.getUserId() != null) {
+            userRepository.findById(dto.getUserId()).ifPresent(user -> {
+                if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+                    emailService.sendSimpleEmail(
+                            user.getEmail(),
+                            "New Notification - Wellness Point",
+                            dto.getMessage()
+                    );
+                }
+            });
+        }
+
         return mapper.convertValue(saved, NotificationDto.class);
     }
 
@@ -70,7 +90,7 @@ public class NotificationServiceImpl implements NotificationService {
         if (existingOpt.isPresent()) {
             Notification existing = existingOpt.get();
 
-            // Update fields (ensure you don't overwrite with nulls if that's not intended)
+            // Update fields (ensure don't overwrite with nulls if that's not intended)
             existing.setMessage(dto.getMessage());
 
             // Optionally update timestamp or other fields
