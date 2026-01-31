@@ -1,12 +1,8 @@
 package edu.icet.controller;
 
-import edu.icet.dto.DoctorDto;
 import edu.icet.dto.PatientDto;
-import edu.icet.entity.Patient;
 import edu.icet.service.PatientService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,8 +12,7 @@ import java.util.List;
 @CrossOrigin
 @RequestMapping("/api/patients")
 public class PatientController {
-    @Autowired
-    private PatientService patientService;
+    private final PatientService patientService;
 
     @PostMapping("/register")
     public void addPatient(@RequestBody PatientDto patientDto) {

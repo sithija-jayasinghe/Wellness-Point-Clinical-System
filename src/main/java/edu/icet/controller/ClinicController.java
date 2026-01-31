@@ -3,7 +3,6 @@ package edu.icet.controller;
 import edu.icet.entity.Clinic;
 import edu.icet.service.ClinicService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.List;
 @CrossOrigin
 public class ClinicController {
 
-    @Autowired
     private final ClinicService clinicService;
 
     @PostMapping("/add")
