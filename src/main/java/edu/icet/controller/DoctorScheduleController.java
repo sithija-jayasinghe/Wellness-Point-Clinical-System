@@ -2,6 +2,7 @@ package edu.icet.controller;
 
 import edu.icet.dto.DoctorScheduleDto;
 import edu.icet.service.DoctorScheduleService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +16,7 @@ public class DoctorScheduleController {
     private final DoctorScheduleService service;
 
     @PostMapping("/add")
-    public void addSchedule(@RequestBody DoctorScheduleDto scheduleDto) {
+    public void addSchedule(@Valid @RequestBody DoctorScheduleDto scheduleDto) {
         service.addSchedule(scheduleDto);
     }
 
@@ -35,7 +36,7 @@ public class DoctorScheduleController {
     }
 
     @PutMapping("/update/{id}")
-    public void updateSchedule(@PathVariable Long id, @RequestBody DoctorScheduleDto scheduleDto) {
+    public void updateSchedule(@PathVariable Long id, @Valid @RequestBody DoctorScheduleDto scheduleDto) {
         service.updateSchedule(id, scheduleDto);
     }
 }

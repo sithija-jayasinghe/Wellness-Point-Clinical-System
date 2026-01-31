@@ -5,6 +5,10 @@ import edu.icet.dto.DoctorScheduleDto;
 import edu.icet.dto.NotificationDto;
 import edu.icet.entity.DoctorSchedule;
 import edu.icet.entity.Staff;
+import edu.icet.exception.BookingFullException;
+import edu.icet.exception.InvalidOperationException;
+import edu.icet.exception.ResourceAlreadyExistsException;
+import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.DoctorScheduleRepository;
 import edu.icet.repository.StaffRepository;
@@ -16,26 +20,48 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
+    private static final String SCHEDULE_NOT_FOUND = "Schedule not found";
+
     private final DoctorScheduleRepository scheduleRepo;
     private final AppointmentRepository appointmentRepo;
-    private final StaffRepository staffRepo; // Inject StaffRepo
-    private final NotificationService notificationService; // Inject NotificationService
+    private final StaffRepository staffRepo;
+    private final NotificationService notificationService;
     private final ObjectMapper mapper;
 
     @Override
     public void addSchedule(DoctorScheduleDto doctorScheduleDto) {
+
+        if (doctorScheduleDto.getStartDateTime() == null || doctorScheduleDto.getEndDateTime() == null) {
+            throw new IllegalArgumentException("Start time and end time are required");
+        }
+
         // Validate logic
         if (!doctorScheduleDto.getStartDateTime().isBefore(doctorScheduleDto.getEndDateTime())) {
-            throw new RuntimeException("Start time must be before end time");
+            throw new IllegalArgumentException("Start time must be before end time");
         }
-        if (doctorScheduleDto.getMaxPatients() <= 0) {
-            throw new RuntimeException("Max patients must be greater than 0");
+
+        if (doctorScheduleDto.getMaxPatients() == null || doctorScheduleDto.getMaxPatients() <= 0) {
+            throw new IllegalArgumentException("Max patients must be greater than 0");
+        }
+
+        if (doctorScheduleDto.getDoctorId() == null) {
+            throw new IllegalArgumentException("Doctor ID is required");
+        }
+
+        // Check for overlapping schedules
+        boolean overlap = scheduleRepo.existsOverlappingSchedule(
+                doctorScheduleDto.getDoctorId(),
+                doctorScheduleDto.getStartDateTime(),
+                doctorScheduleDto.getEndDateTime()
+        );
+
+        if (overlap) {
+            throw new InvalidOperationException("Doctor already has a schedule that overlaps with this time range");
         }
 
         DoctorSchedule schedule = mapper.convertValue(doctorScheduleDto, DoctorSchedule.class);
@@ -55,27 +81,39 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     @Override
     public DoctorScheduleDto getScheduleById(Long id) {
-        Optional<DoctorSchedule> byId = scheduleRepo.findById(id);
-        return byId.map(doctorSchedule -> mapper.convertValue(doctorSchedule, DoctorScheduleDto.class)).orElse(null);
+        DoctorSchedule schedule = scheduleRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(SCHEDULE_NOT_FOUND));
+
+        return mapper.convertValue(schedule, DoctorScheduleDto.class);
     }
 
     @Override
     public void deleteSchedule(Long id) {
-        if (scheduleRepo.existsById(id)) {
-            scheduleRepo.deleteById(id);
+        if (!scheduleRepo.existsById(id)) {
+            throw new ResourceNotFoundException(SCHEDULE_NOT_FOUND);
         }
+        scheduleRepo.deleteById(id);
     }
 
     @Override
     public void updateSchedule(Long id, DoctorScheduleDto doctorScheduleDto) {
-        if (scheduleRepo.findById(id).isPresent()) {
-            DoctorSchedule entity = mapper.convertValue(doctorScheduleDto, DoctorSchedule.class);
-            entity.setId(id);
-            scheduleRepo.save(entity);
+        // Ensure schedule exists
+        DoctorSchedule existing = scheduleRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(SCHEDULE_NOT_FOUND));
 
-            // Notify Staff about schedule update
-            notifyAllStaff("Schedule Updated for Doctor ID: " + entity.getDoctorId());
+        // Validate input (optional but recommended)
+        if (doctorScheduleDto.getStartDateTime() != null
+                && doctorScheduleDto.getEndDateTime() != null
+                && !doctorScheduleDto.getStartDateTime().isBefore(doctorScheduleDto.getEndDateTime())) {
+            throw new IllegalArgumentException("Start time must be before end time");
         }
+
+        DoctorSchedule entity = mapper.convertValue(doctorScheduleDto, DoctorSchedule.class);
+        entity.setId(existing.getId()); // keep same id
+        scheduleRepo.save(entity);
+
+        // Notify Staff about schedule update
+        notifyAllStaff("Schedule Updated for Doctor ID: " + entity.getDoctorId());
     }
 
     private void notifyAllStaff(String message) {
@@ -92,31 +130,33 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     @Override
     public boolean isSlotAvailable(Long scheduleId, Long patientId) {
-        Optional<DoctorSchedule> scheduleOpt = scheduleRepo.findById(scheduleId);
 
-        if (scheduleOpt.isEmpty()) {
-            throw new RuntimeException("Schedule not found");
+        if (scheduleId == null) {
+            throw new IllegalArgumentException("Schedule ID is required");
+        }
+        if (patientId == null) {
+            throw new IllegalArgumentException("Patient ID is required");
         }
 
-        DoctorSchedule schedule = scheduleOpt.get();
+        DoctorSchedule schedule = scheduleRepo.findById(scheduleId)
+                .orElseThrow(() -> new ResourceNotFoundException(SCHEDULE_NOT_FOUND));
 
-        // 1. Check strict time availability
+        // 1) Check schedule not expired
         LocalDateTime now = LocalDateTime.now();
-        // Since we added endDateTime to the Entity, this will now resolve
         if (schedule.getEndDateTime() != null && schedule.getEndDateTime().isBefore(now)) {
-            throw new RuntimeException("This schedule has expired.");
+            throw new InvalidOperationException("This schedule has expired");
         }
 
-        // 2. Check max patients limit
+        // 2) Check max patients limit
         long currentBookings = appointmentRepo.countByDoctorScheduleId(scheduleId);
         if (currentBookings >= schedule.getMaxPatients()) {
-            throw new RuntimeException("Doctor is fully booked for this slot.");
+            throw new BookingFullException("Doctor is fully booked for this slot");
         }
 
-        // 3. Prevent double booking for same patient
+        // 3) Prevent double booking for same patient
         boolean alreadyBooked = appointmentRepo.existsByDoctorScheduleIdAndPatientId(scheduleId, patientId);
         if (alreadyBooked) {
-            throw new RuntimeException("Patient already has an appointment for this schedule.");
+            throw new ResourceAlreadyExistsException("Patient already has an appointment for this schedule");
         }
 
         return true;

@@ -2,6 +2,7 @@ package edu.icet.controller;
 
 import edu.icet.dto.AppointmentDto;
 import edu.icet.service.AppointmentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +16,7 @@ public class AppointmentController {
     private final AppointmentService service;
 
     @PostMapping("/book")
-    public AppointmentDto bookAppointment(@RequestBody AppointmentDto appointmentDto) {
+    public AppointmentDto bookAppointment(@Valid @RequestBody AppointmentDto appointmentDto) {
         return service.bookAppointment(appointmentDto);
     }
 
@@ -35,7 +36,7 @@ public class AppointmentController {
     }
 
     @PutMapping("/update/{id}")
-    public AppointmentDto updateAppointment(@PathVariable Long id, @RequestBody AppointmentDto appointmentDto) {
+    public AppointmentDto updateAppointment(@PathVariable Long id, @Valid @RequestBody AppointmentDto appointmentDto) {
         return service.updateAppointment(id, appointmentDto);
     }
 

@@ -2,6 +2,7 @@ package edu.icet.controller;
 
 import edu.icet.dto.PatientDto;
 import edu.icet.service.PatientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +16,7 @@ public class PatientController {
     private final PatientService patientService;
 
     @PostMapping("/register")
-    public void addPatient(@RequestBody PatientDto patientDto) {
+    public void addPatient(@Valid @RequestBody PatientDto patientDto) {
         patientService.addPatient(patientDto);
     }
 
@@ -31,7 +32,7 @@ public class PatientController {
 
     @PutMapping("/update/{id}")
     public void updatePatient(@PathVariable Long id,
-                             @RequestBody PatientDto patientDto) {
+                             @Valid @RequestBody PatientDto patientDto) {
         patientService.updatePatient(id, patientDto);
     }
 
