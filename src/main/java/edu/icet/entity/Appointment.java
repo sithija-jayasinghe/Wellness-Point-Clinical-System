@@ -32,4 +32,7 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean deleted = false;
 }

@@ -21,4 +21,7 @@ public class Patient {
     private Gender gender;
 
     private Long userId;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean deleted = false;
 }

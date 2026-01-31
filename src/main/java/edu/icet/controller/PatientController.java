@@ -1,6 +1,7 @@
 package edu.icet.controller;
 
 import edu.icet.dto.PatientDto;
+import edu.icet.dto.MedicalHistoryDto;
 import edu.icet.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,10 @@ public class PatientController {
     @DeleteMapping("/delete/{id}")
     public void deletePatient(@PathVariable Long id) {
         patientService.deletePatient(id);
+    }
+
+    @GetMapping("/{id}/medical-history")
+    public List<MedicalHistoryDto> getMedicalHistory(@PathVariable Long id) {
+        return patientService.getMedicalHistory(id);
     }
 }

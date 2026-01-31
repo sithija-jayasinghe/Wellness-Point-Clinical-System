@@ -1,6 +1,7 @@
 package edu.icet.service;
 
 import edu.icet.dto.PatientDto;
+import edu.icet.dto.MedicalHistoryDto;
 import java.util.List;
 
 public interface PatientService {
@@ -9,4 +10,6 @@ public interface PatientService {
     PatientDto getPatientById(Long id);
     void updatePatient(Long id, PatientDto patientDto);
     void deletePatient(Long id);
+
+    List<MedicalHistoryDto> getMedicalHistory(Long patientId);
 }

@@ -5,6 +5,9 @@ import edu.icet.dto.PrescriptionDto;
 import edu.icet.entity.Consultation;
 import edu.icet.entity.Prescription;
 import edu.icet.entity.PrescriptionItem;
+import edu.icet.exception.InvalidOperationException;
+import edu.icet.exception.ResourceAlreadyExistsException;
+import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.ConsultationRepository;
 import edu.icet.repository.PrescriptionRepository;
 import edu.icet.service.PrescriptionService;
@@ -27,7 +30,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     public PrescriptionDto savePrescription(PrescriptionDto prescriptionDto) {
         // Validate that prescription items are not empty
         if (prescriptionDto.getPrescriptionItems() == null || prescriptionDto.getPrescriptionItems().isEmpty()) {
-            throw new RuntimeException("Prescription must contain at least one item.");
+            throw new InvalidOperationException("Prescription must contain at least one item.");
         }
 
         Prescription prescription = mapper.convertValue(prescriptionDto, Prescription.class);
@@ -35,11 +38,11 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         if (prescriptionDto.getConsultationId() != null) {
             // Check if a prescription already exists for this consultation
             if (prescriptionRepo.findByConsultationConsultationId(prescriptionDto.getConsultationId()).isPresent()) {
-                throw new RuntimeException("A prescription already exists for this consultation.");
+                throw new ResourceAlreadyExistsException("A prescription already exists for this consultation.");
             }
 
             Consultation consultation = consultationRepo.findById(prescriptionDto.getConsultationId())
-                    .orElseThrow(() -> new RuntimeException("Consultation not found with ID: " + prescriptionDto.getConsultationId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Consultation not found with ID: " + prescriptionDto.getConsultationId()));
             prescription.setConsultation(consultation);
         }
 
@@ -55,7 +58,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     public List<PrescriptionDto> getAllPrescriptions() {
-        List<Prescription> list = prescriptionRepo.findAll();
+        List<Prescription> list = prescriptionRepo.findByDeletedFalse();
         List<PrescriptionDto> dtoList = new ArrayList<>();
         list.forEach(entity -> {
             PrescriptionDto dto = mapper.convertValue(entity, PrescriptionDto.class);
@@ -70,7 +73,8 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     public PrescriptionDto getPrescriptionById(Long id) {
         Optional<Prescription> byId = prescriptionRepo.findById(id);
-        return byId.map(entity -> {
+        return byId.filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+                .map(entity -> {
             PrescriptionDto dto = mapper.convertValue(entity, PrescriptionDto.class);
             if (entity.getConsultation() != null) {
                 dto.setConsultationId(entity.getConsultation().getConsultationId());
@@ -81,28 +85,34 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     public void updatePrescription(Long id, PrescriptionDto prescriptionDto) {
-        if (prescriptionRepo.existsById(id)) {
-            Prescription prescription = mapper.convertValue(prescriptionDto, Prescription.class);
-            prescription.setPrescriptionId(id);
+        Prescription prescription = prescriptionRepo.findById(id)
+                .filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
 
-            if (prescriptionDto.getConsultationId() != null) {
+        Prescription updated = mapper.convertValue(prescriptionDto, Prescription.class);
+        updated.setPrescriptionId(id);
+        updated.setDeleted(prescription.getDeleted()); // preserve deleted status
+
+        if (prescriptionDto.getConsultationId() != null) {
                 Consultation consultation = consultationRepo.findById(prescriptionDto.getConsultationId())
                         .orElse(null);
-                prescription.setConsultation(consultation);
-            }
-
-            if (prescription.getPrescriptionItems() != null) {
-                for (PrescriptionItem item : prescription.getPrescriptionItems()) {
-                    item.setPrescription(prescription);
-                }
-            }
-
-            prescriptionRepo.save(prescription);
+                updated.setConsultation(consultation);
         }
+
+        if (updated.getPrescriptionItems() != null) {
+             for (PrescriptionItem item : updated.getPrescriptionItems()) {
+                 item.setPrescription(updated);
+             }
+        }
+
+        prescriptionRepo.save(updated);
     }
 
     @Override
     public void deletePrescription(Long id) {
-        prescriptionRepo.deleteById(id);
+        Prescription prescription = prescriptionRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
+        prescription.setDeleted(true);
+        prescriptionRepo.save(prescription);
     }
 }
