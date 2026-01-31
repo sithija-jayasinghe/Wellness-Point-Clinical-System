@@ -29,4 +29,7 @@ public class Prescription {
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<PrescriptionItem> prescriptionItems;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean deleted = false;
 }

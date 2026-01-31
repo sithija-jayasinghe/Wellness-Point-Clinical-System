@@ -7,7 +7,6 @@ import edu.icet.entity.DoctorSchedule;
 import edu.icet.entity.Staff;
 import edu.icet.exception.BookingFullException;
 import edu.icet.exception.InvalidOperationException;
-import edu.icet.exception.ResourceAlreadyExistsException;
 import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.DoctorScheduleRepository;
@@ -147,16 +146,16 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new InvalidOperationException("This schedule has expired");
         }
 
-        // 2) Check max patients limit
-        long currentBookings = appointmentRepo.countByDoctorScheduleId(scheduleId);
+        // 2. Check max patients limit
+        long currentBookings = appointmentRepo.countByDoctorScheduleIdAndDeletedFalse(scheduleId);
         if (currentBookings >= schedule.getMaxPatients()) {
-            throw new BookingFullException("Doctor is fully booked for this slot");
+            throw new BookingFullException("Doctor is fully booked for this slot.");
         }
 
-        // 3) Prevent double booking for same patient
-        boolean alreadyBooked = appointmentRepo.existsByDoctorScheduleIdAndPatientId(scheduleId, patientId);
+        // 3. Prevent double booking for same patient
+        boolean alreadyBooked = appointmentRepo.existsByDoctorScheduleIdAndPatientIdAndDeletedFalse(scheduleId, patientId);
         if (alreadyBooked) {
-            throw new ResourceAlreadyExistsException("Patient already has an appointment for this schedule");
+            throw new InvalidOperationException("Patient already has an appointment for this schedule.");
         }
 
         return true;

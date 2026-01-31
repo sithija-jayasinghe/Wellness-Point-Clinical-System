@@ -64,19 +64,19 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         // NEW: Check for Patient Double Booking (Cannot have another active appointment at the exact same time)
-        if (appointmentRepo.existsByPatientIdAndAppointmentTimeAndStatusNot(
+        if (appointmentRepo.existsByPatientIdAndAppointmentTimeAndStatusNotAndDeletedFalse(
                 dto.getPatientId(), dto.getAppointmentTime(), AppointmentStatus.CANCELLED)) {
             throw new InvalidOperationException("Patient already has an active appointment at " + dto.getAppointmentTime());
         }
 
         // NEW: Check for Doctor/Schedule Time Slot Availability (Doctor cannot see two patients at exact same time)
-        if (appointmentRepo.existsByDoctorScheduleDoctorIdAndAppointmentTimeAndStatusNot(
+        if (appointmentRepo.existsByDoctorScheduleDoctorIdAndAppointmentTimeAndStatusNotAndDeletedFalse(
                 schedule.getDoctorId(), dto.getAppointmentTime(), AppointmentStatus.CANCELLED)) {
             throw new BookingFullException("Doctor is already booked at " + dto.getAppointmentTime());
         }
 
         // 3) Capacity check
-        long currentCount = appointmentRepo.countByDoctorScheduleId(dto.getScheduleId());
+        long currentCount = appointmentRepo.countByDoctorScheduleIdAndDeletedFalse(dto.getScheduleId());
         if (currentCount >= schedule.getMaxPatients()) {
             throw new BookingFullException("Booking full for this schedule");
         }
@@ -110,7 +110,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<AppointmentDto> getAllAppointments() {
-        List<Appointment> all = appointmentRepo.findAll();
+        List<Appointment> all = appointmentRepo.findByDeletedFalse();
         List<AppointmentDto> dtos = new ArrayList<>();
         all.forEach(a -> dtos.add(mapToDto(a)));
         return dtos;
@@ -119,26 +119,31 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentDto getAppointmentById(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
+                .filter(a -> !a.getDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
         return mapToDto(appointment);
     }
 
     @Override
     public void deleteAppointment(Long id) {
-        if (!appointmentRepo.existsById(id)) {
-            throw new ResourceNotFoundException(APPOINTMENT_NOT_FOUND);
-        }
-        appointmentRepo.deleteById(id);
+        Appointment appointment = appointmentRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
+        appointment.setDeleted(true);
+        appointmentRepo.save(appointment);
     }
 
     @Override
     @Transactional
     public void cancelAppointment(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
+                .filter(a -> !a.getDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+             throw new InvalidOperationException("Appointment is already cancelled");
+        }
         if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
-            throw new InvalidOperationException(APPOINTMENT_NOT_FOUND);
+            throw new InvalidOperationException("Cannot cancel a completed appointment");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
@@ -161,10 +166,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public void completeAppointment(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
+                .filter(a -> !a.getDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
             throw new InvalidOperationException("Cannot complete a cancelled appointment");
+        }
+
+        // Ensure strictly from BOOKED (or IN_PROGRESS if we had it)
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
+             throw new InvalidOperationException("Appointment is already completed");
         }
 
         appointment.setStatus(AppointmentStatus.COMPLETED);
@@ -191,6 +202,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public AppointmentDto updateAppointment(Long id, AppointmentDto dto) {
         Appointment existing = appointmentRepo.findById(id)
+                .filter(a -> !a.getDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         // If schedule changed, fetch and attach
