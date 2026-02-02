@@ -28,4 +28,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByDeletedFalse();
 
     List<Appointment> findByPatientIdAndDeletedFalseOrderByAppointmentTimeDesc(Long patientId);
+
+    long countByAppointmentTimeBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
 }
