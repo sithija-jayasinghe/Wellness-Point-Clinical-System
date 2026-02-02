@@ -124,6 +124,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+
+        userRepository.findById(id).ifPresent(user -> {
+            user.setStatus("INACTIVE");
+            userRepository.save(user);
+        });
     }
 }
