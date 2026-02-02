@@ -86,7 +86,7 @@ public class ConsultationServiceImpl implements ConsultationService {
         if (consultationRepo.existsById(id)) {
             Consultation consultation = mapper.convertValue(consultationDto, Consultation.class);
             consultation.setConsultationId(id);
-             if (consultationDto.getAppointmentId() != null) {
+            if (consultationDto.getAppointmentId() != null) {
                 Appointment appointment = appointmentRepo.findById(consultationDto.getAppointmentId())
                         .orElse(null);
                 consultation.setAppointment(appointment);
