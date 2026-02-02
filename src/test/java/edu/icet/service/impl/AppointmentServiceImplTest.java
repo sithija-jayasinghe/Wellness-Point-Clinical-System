@@ -6,6 +6,9 @@ import edu.icet.dto.NotificationDto;
 import edu.icet.entity.Appointment;
 import edu.icet.entity.DoctorSchedule;
 import edu.icet.entity.Patient;
+import edu.icet.exception.BookingFullException;
+import edu.icet.exception.InvalidOperationException;
+import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.DoctorScheduleRepository;
 import edu.icet.repository.PatientRepository;
@@ -76,7 +79,9 @@ class AppointmentServiceImplTest {
     @Test
     void testBookAppointment_Success() {
         when(scheduleRepo.findById(1L)).thenReturn(Optional.of(schedule));
-        when(appointmentRepo.countByDoctorScheduleId(1L)).thenReturn(5L);
+        when(appointmentRepo.existsByPatientIdAndAppointmentTimeAndStatusNotAndDeletedFalse(any(), any(), any())).thenReturn(false);
+        when(appointmentRepo.existsByDoctorScheduleDoctorIdAndAppointmentTimeAndStatusNotAndDeletedFalse(any(), any(), any())).thenReturn(false);
+        when(appointmentRepo.countByDoctorScheduleIdAndDeletedFalse(1L)).thenReturn(5L);
         when(appointmentRepo.findMaxAppointmentNo(1L)).thenReturn(0);
         when(mapper.convertValue(appointmentDto, Appointment.class)).thenReturn(appointmentEntity);
         when(appointmentRepo.save(any(Appointment.class))).thenReturn(appointmentEntity);
@@ -94,7 +99,7 @@ class AppointmentServiceImplTest {
     void testBookAppointment_ScheduleNotFound() {
         when(scheduleRepo.findById(1L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
             appointmentService.bookAppointment(appointmentDto);
         });
 
@@ -104,13 +109,15 @@ class AppointmentServiceImplTest {
     @Test
     void testBookAppointment_BookingFull() {
         when(scheduleRepo.findById(1L)).thenReturn(Optional.of(schedule));
-        when(appointmentRepo.countByDoctorScheduleId(1L)).thenReturn(10L); // Max patients reached
+        when(appointmentRepo.existsByPatientIdAndAppointmentTimeAndStatusNotAndDeletedFalse(any(), any(), any())).thenReturn(false);
+        when(appointmentRepo.existsByDoctorScheduleDoctorIdAndAppointmentTimeAndStatusNotAndDeletedFalse(any(), any(), any())).thenReturn(false);
+        when(appointmentRepo.countByDoctorScheduleIdAndDeletedFalse(1L)).thenReturn(10L); // Max patients reached
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        Exception exception = assertThrows(BookingFullException.class, () -> {
             appointmentService.bookAppointment(appointmentDto);
         });
 
-        assertEquals("Booking Full", exception.getMessage());
+        assertEquals("Booking full for this schedule", exception.getMessage());
     }
 
     @Test
@@ -118,11 +125,11 @@ class AppointmentServiceImplTest {
         when(scheduleRepo.findById(1L)).thenReturn(Optional.of(schedule));
         appointmentDto.setAppointmentTime(LocalDateTime.now().plusHours(10)); // Outside schedule
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        Exception exception = assertThrows(InvalidOperationException.class, () -> {
             appointmentService.bookAppointment(appointmentDto);
         });
 
-        assertEquals("Appointment time falls outside the doctor's schedule.", exception.getMessage());
+        assertEquals("Appointment time falls outside the doctor's schedule", exception.getMessage());
     }
 
     @Test
