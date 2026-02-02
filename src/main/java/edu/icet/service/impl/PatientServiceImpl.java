@@ -51,7 +51,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public PatientDto getPatientById(Long id) {
         Optional<Patient> byId = patientRepo.findById(id);
-        return byId.filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+        return byId.filter(p -> !p.isDeleted())
                 .map(entity -> mapper.convertValue(entity, PatientDto.class))
                 .orElse(null);
     }
@@ -59,7 +59,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public void updatePatient(Long id, PatientDto patientDto) {
         Patient existing = patientRepo.findById(id)
-                .filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
         Patient updatedInfo = mapper.convertValue(patientDto, Patient.class);
@@ -70,7 +70,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         // Preserve deleted status
-        updatedInfo.setDeleted(existing.getDeleted());
+        updatedInfo.setDeleted(existing.isDeleted());
 
         updatedInfo.setId(id);
         patientRepo.save(updatedInfo);

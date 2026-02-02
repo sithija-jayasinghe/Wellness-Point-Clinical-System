@@ -23,5 +23,5 @@ public class Patient {
     private Long userId;
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean deleted = false;
+    private boolean deleted = false;
 }

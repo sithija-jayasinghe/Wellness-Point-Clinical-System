@@ -73,7 +73,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     public PrescriptionDto getPrescriptionById(Long id) {
         Optional<Prescription> byId = prescriptionRepo.findById(id);
-        return byId.filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+        return byId.filter(p -> !p.isDeleted())
                 .map(entity -> {
             PrescriptionDto dto = mapper.convertValue(entity, PrescriptionDto.class);
             if (entity.getConsultation() != null) {
@@ -86,12 +86,12 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     public void updatePrescription(Long id, PrescriptionDto prescriptionDto) {
         Prescription prescription = prescriptionRepo.findById(id)
-                .filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
 
         Prescription updated = mapper.convertValue(prescriptionDto, Prescription.class);
         updated.setPrescriptionId(id);
-        updated.setDeleted(prescription.getDeleted()); // preserve deleted status
+        updated.setDeleted(prescription.isDeleted()); // preserve deleted status
 
         if (prescriptionDto.getConsultationId() != null) {
                 Consultation consultation = consultationRepo.findById(prescriptionDto.getConsultationId())

@@ -31,5 +31,5 @@ public class Prescription {
     private List<PrescriptionItem> prescriptionItems;
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean deleted = false;
+    private boolean deleted = false;
 }
