@@ -1,12 +1,18 @@
 package edu.icet.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.icet.dto.LoginResponseDto;
 import edu.icet.dto.UserRegistrationDto;
 import edu.icet.entity.*;
 import edu.icet.exception.ResourceAlreadyExistsException;
 import edu.icet.repository.*;
+import edu.icet.service.JwtService;
 import edu.icet.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +30,8 @@ public class UserServiceImpl implements UserService {
     private final UserClinicRepository userClinicRepository;
     private final ObjectMapper mapper;
     private final PasswordEncoder passwordEncoder; // Security එක Inject
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     @Transactional
@@ -66,9 +74,33 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Boolean validateUser(String username, String password) {
-        User user = userRepository.findByUsername(username).orElse(null);
-        return user != null && passwordEncoder.matches(password, user.getPassword());
+    public LoginResponseDto login(String username, String password) {
+        // Authenticate using AuthenticationManager
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        // Fetch User and Role
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserRole userRole = userRoleRepository.findByUser_UserId(user.getUserId())
+                .orElseThrow(() -> new RuntimeException("Role not found for user"));
+
+        String roleName = userRole.getRole().getName();
+
+        // Generate Token
+        // The authentication.getPrincipal() is the UserDetails object returned by CustomUserDetailsService
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String token = jwtService.generateToken(userDetails, roleName);
+
+        // Build Response
+        return LoginResponseDto.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .role(roleName)
+                .build();
     }
 
     @Override

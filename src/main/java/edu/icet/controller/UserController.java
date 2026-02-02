@@ -1,6 +1,7 @@
 package edu.icet.controller;
 
 import edu.icet.dto.LoginRequest;
+import edu.icet.dto.LoginResponseDto;
 import edu.icet.dto.UserRegistrationDto;
 import edu.icet.entity.User;
 import edu.icet.service.UserService;
@@ -24,12 +25,11 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String loginUser(@RequestBody LoginRequest loginRequest) {
-        boolean isValid = userService.validateUser(
+    public LoginResponseDto loginUser(@RequestBody LoginRequest loginRequest) {
+        return userService.login(
                 loginRequest.getUsername(),
                 loginRequest.getPassword()
         );
-        return isValid ? "Login Success!" : "Invalid Username or Password";
     }
 
     @GetMapping("/get-all")
