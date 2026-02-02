@@ -119,7 +119,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentDto getAppointmentById(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
-                .filter(a -> !a.getDeleted())
+                .filter(a -> !a.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
         return mapToDto(appointment);
     }
@@ -136,7 +136,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public void cancelAppointment(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
-                .filter(a -> !a.getDeleted())
+                .filter(a -> !a.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
@@ -166,7 +166,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public void completeAppointment(Long id) {
         Appointment appointment = appointmentRepo.findById(id)
-                .filter(a -> !a.getDeleted())
+                .filter(a -> !a.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
@@ -202,7 +202,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public AppointmentDto updateAppointment(Long id, AppointmentDto dto) {
         Appointment existing = appointmentRepo.findById(id)
-                .filter(a -> !a.getDeleted())
+                .filter(a -> !a.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND));
 
         // If schedule changed, fetch and attach

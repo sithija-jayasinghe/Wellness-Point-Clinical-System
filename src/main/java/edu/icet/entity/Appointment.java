@@ -34,5 +34,5 @@ public class Appointment {
     private AppointmentStatus status;
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean deleted = false;
+    private boolean deleted = false;
 }
