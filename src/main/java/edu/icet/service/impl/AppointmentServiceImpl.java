@@ -216,6 +216,21 @@ public class AppointmentServiceImpl implements AppointmentService {
             existing.setAppointmentTime(dto.getAppointmentTime());
         }
 
+        // --- NEW CODE START: Update Status and Patient ---
+        if (dto.getStatus() != null && !dto.getStatus().isEmpty()) {
+            try {
+                // Convert String status from DTO to Enum
+                existing.setStatus(AppointmentStatus.valueOf(dto.getStatus()));
+            } catch (IllegalArgumentException e) {
+                // Keep old status or throw exception if status string is invalid
+            }
+        }
+
+        if (dto.getPatientId() != null) {
+            existing.setPatientId(dto.getPatientId());
+        }
+        // --- NEW CODE END ---
+
         Appointment saved = appointmentRepo.save(existing);
         return mapToDto(saved);
     }
