@@ -1,6 +1,7 @@
 package edu.icet.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import edu.icet.entity.Clinic;
 import edu.icet.entity.User;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -25,4 +26,6 @@ public class DoctorDto {
     private double consultationFee;
 
     private String status;
+
+    private java.util.List<Clinic> clinics;
 }
