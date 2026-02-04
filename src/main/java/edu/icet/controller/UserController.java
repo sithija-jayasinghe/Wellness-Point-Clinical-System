@@ -3,7 +3,7 @@ package edu.icet.controller;
 import edu.icet.dto.LoginRequest;
 import edu.icet.dto.LoginResponseDto;
 import edu.icet.dto.UserRegistrationDto;
-import edu.icet.entity.User;
+import edu.icet.dto.UserResponseDto;
 import edu.icet.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class UserController {
     }
 
     @GetMapping("/get-all")
-    public List<User> getAllUsers() {
+    public List<UserResponseDto> getAllUsers() {  // Change return type here
         return userService.getAllUsers();
     }
 
