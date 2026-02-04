@@ -16,6 +16,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import edu.icet.dto.UserResponseDto;
+import java.util.ArrayList;
+import java.util.Optional;
 
 import java.util.List;
 
@@ -104,8 +107,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponseDto> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        List<UserResponseDto> dtos = new ArrayList<>();
+
+        for (User user : users) {
+            // 1. Find Role Name
+            String roleName = "N/A";
+            // logic to find role using the existing userRoleRepository
+            Optional<UserRole> userRole = userRoleRepository.findByUser_UserId(user.getUserId());
+            if (userRole.isPresent()) {
+                roleName = userRole.get().getRole().getName();
+            }
+
+            // 3. Build DTO
+            dtos.add(UserResponseDto.builder()
+                    .userId(user.getUserId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .status(user.getStatus())
+                    .role(roleName)       // Now sending the role name
+                    .build());
+        }
+        return dtos;
     }
 
     @Override
