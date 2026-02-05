@@ -28,9 +28,35 @@ public class DoctorServiceImpl implements DoctorService {
     private final ObjectMapper mapper;
 
     @Override
+    @Transactional
     public void addDoctor(DoctorDto doctorDto) {
+        // 1. Save the Doctor entity
         Doctor doctor = mapper.convertValue(doctorDto, Doctor.class);
         doctorRepo.save(doctor);
+
+        // 2. Handle Clinic Mappings (UserClinic)
+        // Check if we have a User link and a list of clinics from the frontend
+        if (doctor.getUser() != null && doctorDto.getClinics() != null) {
+
+            // Clean up any existing mappings for this user (e.g. the one created by registerUser)
+            // to ensure the list matches exactly what the frontend sent.
+            List<UserClinic> existingMappings = userClinicRepo.findByUser(doctor.getUser());
+            userClinicRepo.deleteAll(existingMappings);
+
+            // Add all clinics from the list
+            for (Clinic clinicDto : doctorDto.getClinics()) {
+                if (clinicDto != null && clinicDto.getId() != null) {
+                    Optional<Clinic> clinicOpt = clinicRepo.findById(clinicDto.getId());
+
+                    if (clinicOpt.isPresent()) {
+                        UserClinic userClinic = new UserClinic();
+                        userClinic.setUser(doctor.getUser());
+                        userClinic.setClinic(clinicOpt.get());
+                        userClinicRepo.save(userClinic);
+                    }
+                }
+            }
+        }
     }
 
     @Override
