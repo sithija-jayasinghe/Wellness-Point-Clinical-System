@@ -66,7 +66,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         DoctorSchedule schedule = mapper.convertValue(doctorScheduleDto, DoctorSchedule.class);
         scheduleRepo.save(schedule);
 
-        // Notify Staff about new schedule
+        // Notify Staff about the new schedule
         notifyAllStaff("New schedule created for Doctor ID: " + schedule.getDoctorId());
     }
 
@@ -108,7 +108,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         }
 
         DoctorSchedule entity = mapper.convertValue(doctorScheduleDto, DoctorSchedule.class);
-        entity.setId(existing.getId()); // keep same id
+        entity.setId(existing.getId()); // keep the same id
         scheduleRepo.save(entity);
 
         // Notify Staff about schedule update
@@ -152,7 +152,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new BookingFullException("Doctor is fully booked for this slot.");
         }
 
-        // 3. Prevent double booking for same patient
+        // 3. Prevent double booking for the same patient
         boolean alreadyBooked = appointmentRepo.existsByDoctorScheduleIdAndPatientIdAndDeletedFalse(scheduleId, patientId);
         if (alreadyBooked) {
             throw new InvalidOperationException("Patient already has an appointment for this schedule.");

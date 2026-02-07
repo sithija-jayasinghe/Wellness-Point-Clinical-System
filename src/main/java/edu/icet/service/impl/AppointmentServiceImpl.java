@@ -69,7 +69,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new InvalidOperationException("Patient already has an active appointment at " + dto.getAppointmentTime());
         }
 
-        // NEW: Check for Doctor/Schedule Time Slot Availability (Doctor cannot see two patients at exact same time)
+        // NEW: Check for Doctor/Schedule Time Slot Availability (Doctor cannot see two patients at the exact same time)
         if (appointmentRepo.existsByDoctorScheduleDoctorIdAndAppointmentTimeAndStatusNotAndDeletedFalse(
                 schedule.getDoctorId(), dto.getAppointmentTime(), AppointmentStatus.CANCELLED)) {
             throw new BookingFullException("Doctor is already booked at " + dto.getAppointmentTime());

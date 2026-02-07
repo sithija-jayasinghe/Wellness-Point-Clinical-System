@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,25 +36,7 @@ public class DoctorServiceImpl implements DoctorService {
         // 2. Handle Clinic Mappings (UserClinic)
         // Check if we have a User link and a list of clinics from the frontend
         if (doctor.getUser() != null && doctorDto.getClinics() != null) {
-
-            // Clean up any existing mappings for this user (e.g. the one created by registerUser)
-            // to ensure the list matches exactly what the frontend sent.
-            List<UserClinic> existingMappings = userClinicRepo.findByUser(doctor.getUser());
-            userClinicRepo.deleteAll(existingMappings);
-
-            // Add all clinics from the list
-            for (Clinic clinicDto : doctorDto.getClinics()) {
-                if (clinicDto != null && clinicDto.getId() != null) {
-                    Optional<Clinic> clinicOpt = clinicRepo.findById(clinicDto.getId());
-
-                    if (clinicOpt.isPresent()) {
-                        UserClinic userClinic = new UserClinic();
-                        userClinic.setUser(doctor.getUser());
-                        userClinic.setClinic(clinicOpt.get());
-                        userClinicRepo.save(userClinic);
-                    }
-                }
-            }
+            updateUserClinics(doctor, doctorDto.getClinics());
         }
     }
 
@@ -63,32 +44,23 @@ public class DoctorServiceImpl implements DoctorService {
     public List<DoctorDto> getAllDoctors() {
         List<Doctor> list = doctorRepo.findAll();
         List<DoctorDto> dtoList = new ArrayList<>();
+
         list.forEach(entity -> {
             DoctorDto dto = mapper.convertValue(entity, DoctorDto.class);
-            if (entity.getUser() != null) {
-                List<UserClinic> userClinics = userClinicRepo.findByUser(entity.getUser());
-                List<Clinic> clinics = userClinics.stream()
-                        .map(UserClinic::getClinic)
-                        .collect(Collectors.toList());
-                dto.setClinics(clinics);
-            }
+            dto.setClinics(getClinicsByUser(entity));
             dtoList.add(dto);
         });
+
         return dtoList;
     }
 
     @Override
     public DoctorDto getDoctorById(Long id) {
         Optional<Doctor> byId = doctorRepo.findById(id);
+
         return byId.map(entity -> {
             DoctorDto dto = mapper.convertValue(entity, DoctorDto.class);
-            if (entity.getUser() != null) {
-                List<UserClinic> userClinics = userClinicRepo.findByUser(entity.getUser());
-                List<Clinic> clinics = userClinics.stream()
-                        .map(UserClinic::getClinic)
-                        .collect(Collectors.toList());
-                dto.setClinics(clinics);
-            }
+            dto.setClinics(getClinicsByUser(entity));
             return dto;
         }).orElse(null);
     }
@@ -97,6 +69,7 @@ public class DoctorServiceImpl implements DoctorService {
     @Transactional
     public void updateDoctor(Long id, DoctorDto doctorDto) {
         Optional<Doctor> byId = doctorRepo.findById(id);
+
         if (byId.isPresent()) {
             Doctor doctor = byId.get();
             doctor.setName(doctorDto.getName());
@@ -108,23 +81,9 @@ public class DoctorServiceImpl implements DoctorService {
             }
 
             if (doctor.getUser() != null && doctorDto.getClinics() != null) {
-                // Fetch and delete existing mappings explicitly
-                List<UserClinic> existingMappings = userClinicRepo.findByUser(doctor.getUser());
-                userClinicRepo.deleteAll(existingMappings);
-
-                // Add new mappings
-                for (Clinic clinicDto : doctorDto.getClinics()) {
-                    if (clinicDto != null && clinicDto.getId() != null) {
-                        Optional<Clinic> clinicOpt = clinicRepo.findById(clinicDto.getId());
-                        if (clinicOpt.isPresent()) {
-                            UserClinic userClinic = new UserClinic();
-                            userClinic.setUser(doctor.getUser());
-                            userClinic.setClinic(clinicOpt.get());
-                            userClinicRepo.save(userClinic);
-                        }
-                    }
-                }
+                updateUserClinics(doctor, doctorDto.getClinics());
             }
+
             doctorRepo.save(doctor);
         }
     }
@@ -132,5 +91,32 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public void deleteDoctor(Long id) {
         doctorRepo.deleteById(id);
+    }
+
+    private List<Clinic> getClinicsByUser(Doctor doctor) {
+        if (doctor.getUser() == null) {
+            return List.of();
+        }
+        return userClinicRepo.findByUser(doctor.getUser())
+                .stream()
+                .map(UserClinic::getClinic)
+                .toList(); // replaces collect(Collectors.toList())
+    }
+
+    private void updateUserClinics(Doctor doctor, List<Clinic> clinics) {
+        List<UserClinic> existingMappings = userClinicRepo.findByUser(doctor.getUser());
+        userClinicRepo.deleteAll(existingMappings);
+
+        // Add all clinics from the list
+        for (Clinic clinicDto : clinics) {
+            if (clinicDto != null && clinicDto.getId() != null) {
+                clinicRepo.findById(clinicDto.getId()).ifPresent(clinic -> {
+                    UserClinic userClinic = new UserClinic();
+                    userClinic.setUser(doctor.getUser());
+                    userClinic.setClinic(clinic);
+                    userClinicRepo.save(userClinic);
+                });
+            }
+        }
     }
 }

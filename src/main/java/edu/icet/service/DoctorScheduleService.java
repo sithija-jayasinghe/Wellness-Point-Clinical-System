@@ -9,7 +9,5 @@ public interface DoctorScheduleService {
     DoctorScheduleDto getScheduleById(Long id);
     void deleteSchedule(Long id);
     void updateSchedule(Long id, DoctorScheduleDto doctorScheduleDto);
-
-    // NEW: Validation Method
     boolean isSlotAvailable(Long scheduleId, Long patientId);
 }
