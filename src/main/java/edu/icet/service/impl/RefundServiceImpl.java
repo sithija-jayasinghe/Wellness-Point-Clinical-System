@@ -5,6 +5,8 @@ import edu.icet.dto.RefundDto;
 import edu.icet.entity.Appointment;
 import edu.icet.entity.Payment;
 import edu.icet.entity.Refund;
+import edu.icet.exception.InvalidOperationException;
+import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.RefundRepository;
@@ -33,13 +35,13 @@ public class RefundServiceImpl implements RefundService {
             Payment payment = paymentRepo.findById(refundDto.getPayment().getPaymentId())
                     .orElseThrow(() -> new RuntimeException("Payment not found"));
 
-            // Validate that refund is only for cancelled appointments
+            // Validate that refund is only for canceled appointments
             if (payment.getAppointmentId() != null) {
                 Appointment appointment = appointmentRepo.findById(payment.getAppointmentId())
-                        .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
 
                 if (appointment.getStatus() != AppointmentStatus.CANCELLED) {
-                    throw new RuntimeException("Refunds allowed only for cancelled appointments");
+                    throw new InvalidOperationException("Refunds allowed only for cancelled appointments");
                 }
             }
 

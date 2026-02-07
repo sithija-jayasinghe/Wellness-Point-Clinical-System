@@ -6,6 +6,8 @@ import edu.icet.dto.PaymentDto;
 import edu.icet.entity.Appointment;
 import edu.icet.entity.Payment;
 import edu.icet.entity.Patient;
+import edu.icet.exception.InvalidOperationException;
+import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.PatientRepository;
@@ -38,17 +40,20 @@ public class PaymentServiceImpl implements PaymentService {
         // Validate payment amount against doctor's consultation fee
         if (payment.getAppointmentId() != null) {
             Appointment appointment = appointmentRepo.findById(payment.getAppointmentId())
-                    .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
 
             if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
-                throw new RuntimeException("Cannot make payment for a CANCELLED appointment.");
+                throw new InvalidOperationException("Cannot make payment for a CANCELLED appointment.");
             }
 
-            if (appointment.getDoctor() != null) {
-                if (payment.getAmount() != appointment.getDoctor().getConsultationFee()) {
-                    throw new RuntimeException("Payment amount must match the doctor's consultation fee: " + appointment.getDoctor().getConsultationFee());
-                }
+            if (appointment.getDoctor() != null
+                    && payment.getAmount() != appointment.getDoctor().getConsultationFee()) {
+                throw new InvalidOperationException(
+                        "Payment amount must match the doctor's consultation fee: "
+                                + appointment.getDoctor().getConsultationFee()
+                );
             }
+
 
             // Attempt to get userId from the patient associated with the appointment
             if (appointment.getPatientId() != null) {

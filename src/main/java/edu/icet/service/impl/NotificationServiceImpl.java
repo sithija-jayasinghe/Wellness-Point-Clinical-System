@@ -26,8 +26,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final EmailService emailService;
     private final ObjectMapper mapper;
 
-    // ... existing methods (send, getAll, etc.) ...
-
     @Override
     public NotificationDto sendNotification(NotificationDto dto) {
         Notification notification = mapper.convertValue(dto, Notification.class);
@@ -93,7 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
             // Update fields (ensure don't overwrite with nulls if that's not intended)
             existing.setMessage(dto.getMessage());
 
-            // Optionally update timestamp or other fields
+            // Optional update timestamp or other fields
             if (dto.getSentAt() != null) {
                 existing.setSentAt(dto.getSentAt());
             }

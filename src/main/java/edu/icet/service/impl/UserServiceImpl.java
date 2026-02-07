@@ -114,7 +114,7 @@ public class UserServiceImpl implements UserService {
         for (User user : users) {
             // 1. Find Role Name
             String roleName = "N/A";
-            // logic to find role using the existing userRoleRepository
+            // logic to find a role using the existing userRoleRepository
             Optional<UserRole> userRole = userRoleRepository.findByUser_UserId(user.getUserId());
             if (userRole.isPresent()) {
                 roleName = userRole.get().getRole().getName();

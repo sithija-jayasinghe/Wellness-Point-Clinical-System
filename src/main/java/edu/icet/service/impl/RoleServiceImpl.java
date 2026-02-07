@@ -3,6 +3,7 @@ package edu.icet.service.impl;
 import edu.icet.dto.AuditLogDto;
 import edu.icet.entity.Permission;
 import edu.icet.entity.Role;
+import edu.icet.exception.ResourceAlreadyExistsException;
 import edu.icet.repository.PermissionRepository;
 import edu.icet.repository.RoleRepository;
 import edu.icet.service.AuditLogService;
@@ -24,7 +25,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public void createRole(Role role) {
         if (roleRepository.findByName(role.getName()).isPresent()) {
-            throw new RuntimeException("Role already exists!");
+            throw new ResourceAlreadyExistsException("Role already exists!");
         }
         Role savedRole = roleRepository.save(role);
 
