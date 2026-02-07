@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Data
@@ -21,6 +22,14 @@ public class Patient {
     private Gender gender;
 
     private Long userId;
+
+    @ManyToMany
+    @JoinTable(
+            name = "patient_clinic",
+            joinColumns = @JoinColumn(name = "patient_id"),
+            inverseJoinColumns = @JoinColumn(name = "clinic_id")
+    )
+    private List<Clinic> clinics;
 
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted = false;

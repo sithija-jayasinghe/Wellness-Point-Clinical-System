@@ -1,11 +1,13 @@
 package edu.icet.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import edu.icet.entity.Clinic;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -26,4 +28,8 @@ public class PatientDto {
 
     private String gender;
     private Long userId;
+
+    private List<Clinic> clinics;
+
+    private List<Long> clinicIds;
 }
