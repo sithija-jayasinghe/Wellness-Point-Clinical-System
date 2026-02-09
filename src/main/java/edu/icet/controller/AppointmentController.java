@@ -9,8 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/appointment")
+@RequestMapping("/api/appointments") // CHANGED: Added /api prefix and made plural
 @RequiredArgsConstructor
+@CrossOrigin // ADDED: Required for frontend access
 public class AppointmentController {
 
     private final AppointmentService service;
