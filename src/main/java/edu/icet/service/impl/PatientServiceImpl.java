@@ -25,18 +25,59 @@ import java.util.Optional;
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepo;
-    private final AppointmentRepository appointmentRepo;     // Injected
-    private final ConsultationRepository consultationRepo; // Injected
-    private final PrescriptionRepository prescriptionRepo; // Injected
+    private final AppointmentRepository appointmentRepo;
+    private final ConsultationRepository consultationRepo;
+    private final PrescriptionRepository prescriptionRepo;
+    
+    // Injected for User Creation
+    private final edu.icet.repository.UserRepository userRepo;
+    private final edu.icet.repository.RoleRepository roleRepo;
+    private final edu.icet.repository.UserRoleRepository userRoleRepo;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    
     private final ObjectMapper mapper;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void addPatient(PatientDto patientDto) {
         if (patientRepo.findByNic(patientDto.getNic()).isPresent()) {
             throw new ResourceAlreadyExistsException("Patient with NIC " + patientDto.getNic() + " already exists.");
         }
 
+        // 1. Create User Entity
+        edu.icet.entity.User user = new edu.icet.entity.User();
+        
+        // Handle potential username duplicates (simplistic approach: append phone if name exists)
+        String username = patientDto.getName();
+        if (userRepo.existsByUsername(username)) {
+            // If the name exists, try appending last 4 digits of phone
+            String phone = patientDto.getPhone();
+            if (phone.length() >= 4) {
+                 username = username + phone.substring(phone.length() - 4);
+            } else {
+                 username = username + "_" + System.currentTimeMillis();
+            }
+        }
+        
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(patientDto.getPhone())); // Password is Phone
+        user.setEmail(patientDto.getPhone() + "@wellness.com"); // Dummy Email
+        user.setStatus("ACTIVE");
+        
+        edu.icet.entity.User savedUser = userRepo.save(user);
+
+        // 2. Assign Role (PATIENT)
+        edu.icet.entity.Role role = roleRepo.findByName("PATIENT")
+                .orElseThrow(() -> new RuntimeException("Role 'PATIENT' not found"));
+
+        edu.icet.entity.UserRole userRole = new edu.icet.entity.UserRole();
+        userRole.setUser(savedUser);
+        userRole.setRole(role);
+        userRoleRepo.save(userRole);
+
+        // 3. Create Patient and Link User
         Patient patient = mapper.convertValue(patientDto, Patient.class);
+        patient.setUserId(savedUser.getUserId());
         patientRepo.save(patient);
     }
 

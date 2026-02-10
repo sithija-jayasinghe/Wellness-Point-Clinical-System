@@ -64,6 +64,9 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             PrescriptionDto dto = mapper.convertValue(entity, PrescriptionDto.class);
             if (entity.getConsultation() != null) {
                 dto.setConsultationId(entity.getConsultation().getConsultationId());
+                if (entity.getConsultation().getAppointment() != null) {
+                    dto.setPatientId(entity.getConsultation().getAppointment().getPatientId());
+                }
             }
             dtoList.add(dto);
         });
@@ -78,6 +81,9 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             PrescriptionDto dto = mapper.convertValue(entity, PrescriptionDto.class);
             if (entity.getConsultation() != null) {
                 dto.setConsultationId(entity.getConsultation().getConsultationId());
+                if (entity.getConsultation().getAppointment() != null) {
+                    dto.setPatientId(entity.getConsultation().getAppointment().getPatientId());
+                }
             }
             return dto;
         }).orElse(null);

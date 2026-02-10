@@ -13,6 +13,7 @@ import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.DoctorScheduleRepository;
 import edu.icet.repository.PatientRepository;
+import edu.icet.repository.PaymentRepository;
 import edu.icet.service.AppointmentService;
 import edu.icet.service.AuditLogService;
 import edu.icet.service.NotificationService;
@@ -162,6 +163,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
 
+    private final PaymentRepository paymentRepo; // Injected
+
     @Override
     @Transactional
     public void completeAppointment(Long id) {
@@ -180,6 +183,24 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointmentRepo.save(appointment);
+
+        // --- NEW: Generate Pending Payment ---
+        edu.icet.entity.Payment payment = new edu.icet.entity.Payment();
+        payment.setAppointmentId(appointment.getId());
+        
+        // Use Doctor's fee if available, else 0.0
+        if (appointment.getDoctor() != null) {
+            payment.setAmount(appointment.getDoctor().getConsultationFee());
+        } else {
+            payment.setAmount(0.0);
+        }
+        
+        payment.setPaymentDate(java.time.LocalDate.now());
+        payment.setStatus(edu.icet.util.PaymentStatus.PENDING);
+        payment.setPaymentMethod(edu.icet.util.PaymentMethod.CASH); // Default
+        
+        paymentRepo.save(payment);
+        // -------------------------------------
 
         // Retrieve userId from patient
         Long userId = null;

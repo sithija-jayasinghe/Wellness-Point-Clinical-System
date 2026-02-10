@@ -81,14 +81,28 @@ public class PaymentServiceImpl implements PaymentService {
     public List<PaymentDto> getAllPayments() {
         List<Payment> list = paymentRepo.findAll();
         List<PaymentDto> dtoList = new ArrayList<>();
-        list.forEach(entity -> dtoList.add(mapper.convertValue(entity, PaymentDto.class)));
+        list.forEach(entity -> {
+            PaymentDto dto = mapper.convertValue(entity, PaymentDto.class);
+            if (entity.getAppointmentId() != null) {
+                appointmentRepo.findById(entity.getAppointmentId())
+                        .ifPresent(appt -> dto.setPatientId(appt.getPatientId()));
+            }
+            dtoList.add(dto);
+        });
         return dtoList;
     }
 
     @Override
     public PaymentDto getPaymentById(Long id) {
         Optional<Payment> byId = paymentRepo.findById(id);
-        return byId.map(entity -> mapper.convertValue(entity, PaymentDto.class)).orElse(null);
+        return byId.map(entity -> {
+            PaymentDto dto = mapper.convertValue(entity, PaymentDto.class);
+            if (entity.getAppointmentId() != null) {
+                appointmentRepo.findById(entity.getAppointmentId())
+                        .ifPresent(appt -> dto.setPatientId(appt.getPatientId()));
+            }
+            return dto;
+        }).orElse(null);
     }
 
     @Override
