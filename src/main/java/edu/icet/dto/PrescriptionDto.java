@@ -18,6 +18,7 @@ public class PrescriptionDto {
     private Long consultationId;
     private LocalDate issuedDate;
     private List<PrescriptionItemDto> prescriptionItems;
+    private Long patientId;
 
     @JsonProperty("consultation")
     private void unpackConsultation(Map<String, Object> consultation) {

@@ -11,4 +11,5 @@ public class PaymentDto {
     private Long appointmentId;
     private String paymentMethod;
     private String status;
+    private Long patientId;
 }
