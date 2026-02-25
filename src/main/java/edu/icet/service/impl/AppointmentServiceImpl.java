@@ -11,6 +11,7 @@ import edu.icet.exception.BookingFullException;
 import edu.icet.exception.InvalidOperationException;
 import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.AppointmentRepository;
+import edu.icet.repository.DoctorRepository;
 import edu.icet.repository.DoctorScheduleRepository;
 import edu.icet.repository.PatientRepository;
 import edu.icet.repository.PaymentRepository;
@@ -36,6 +37,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository appointmentRepo;
     private final DoctorScheduleRepository scheduleRepo;
+    private final DoctorRepository doctorRepo;
     private final PatientRepository patientRepo;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
@@ -95,6 +97,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setDoctorSchedule(schedule);
         appointment.setAppointmentNo(newAppointmentNo);
         appointment.setStatus(AppointmentStatus.BOOKED);
+
+        // 6b) Explicitly load and link the Doctor entity so email/queries can resolve the name
+        if (schedule.getDoctorId() != null) {
+            doctorRepo.findById(schedule.getDoctorId()).ifPresent(appointment::setDoctor);
+        }
 
         Appointment savedAppointment = appointmentRepo.save(appointment);
 
