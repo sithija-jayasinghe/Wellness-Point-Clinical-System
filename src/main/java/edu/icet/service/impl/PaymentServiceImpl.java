@@ -12,6 +12,7 @@ import edu.icet.repository.AppointmentRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.repository.PatientRepository;
 import edu.icet.service.AuditLogService;
+import edu.icet.service.EmailService;
 import edu.icet.service.PaymentService;
 import edu.icet.util.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +31,14 @@ public class PaymentServiceImpl implements PaymentService {
     private final AppointmentRepository appointmentRepo;
     private final PatientRepository patientRepo;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
     private final ObjectMapper mapper;
 
     @Override
     public void addPayment(PaymentDto paymentDto) {
         Payment payment = mapper.convertValue(paymentDto, Payment.class);
         Long userId = null;
+        Patient patientForEmail = null;
 
         // Validate payment amount against doctor's consultation fee
         if (payment.getAppointmentId() != null) {
@@ -54,12 +57,12 @@ public class PaymentServiceImpl implements PaymentService {
                 );
             }
 
-
             // Attempt to get userId from the patient associated with the appointment
             if (appointment.getPatientId() != null) {
                 Optional<Patient> patientOpt = patientRepo.findById(appointment.getPatientId());
                 if (patientOpt.isPresent()) {
                     userId = patientOpt.get().getUserId();
+                    patientForEmail = patientOpt.get();
                 }
             }
         }
@@ -68,13 +71,17 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Audit Log
         AuditLogDto auditLog = new AuditLogDto();
-        auditLog.setUserId(userId); // Use the patient's userId if available
+        auditLog.setUserId(userId);
         auditLog.setAction("PAYMENT_MADE");
         auditLog.setEntity("Payment");
         auditLog.setEntityId(savedPayment.getPaymentId());
         auditLog.setTimestamp(LocalDateTime.now());
-
         auditLogService.createLog(auditLog);
+
+        // Send payment receipt email to patient
+        if (patientForEmail != null && patientForEmail.getEmail() != null && !patientForEmail.getEmail().isBlank()) {
+            emailService.sendPaymentReceipt(savedPayment, patientForEmail.getEmail(), patientForEmail.getName());
+        }
     }
 
     @Override

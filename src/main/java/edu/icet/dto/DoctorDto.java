@@ -22,6 +22,9 @@ public class DoctorDto {
     @NotBlank(message = "Specialization is required")
     private String specialization;
 
+    @jakarta.validation.constraints.Email(message = "Invalid email address")
+    private String email;
+
     @Min(value = 0, message = "Consultation fee cannot be negative")
     private double consultationFee;
 

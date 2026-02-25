@@ -23,6 +23,9 @@ public class PatientDto {
     @NotBlank(message = "Phone number is required")
     private String phone;
 
+    @jakarta.validation.constraints.Email(message = "Invalid email address")
+    private String email;
+
     @Past(message = "Date of Birth must be in the past")
     private LocalDate dob;
 
