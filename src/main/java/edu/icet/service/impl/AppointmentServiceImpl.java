@@ -16,6 +16,7 @@ import edu.icet.repository.PatientRepository;
 import edu.icet.repository.PaymentRepository;
 import edu.icet.service.AppointmentService;
 import edu.icet.service.AuditLogService;
+import edu.icet.service.EmailService;
 import edu.icet.service.NotificationService;
 import edu.icet.util.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepo;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
     private final ObjectMapper mapper;
 
     @Override
@@ -106,6 +108,19 @@ public class AppointmentServiceImpl implements AppointmentService {
                     notificationService.sendNotification(notif);
                 });
 
+        // 8) Send email confirmation to patient
+        patientRepo.findById(dto.getPatientId()).ifPresent(patient -> {
+            if (patient.getEmail() != null && !patient.getEmail().isBlank()) {
+                emailService.sendAppointmentConfirmation(savedAppointment, patient.getEmail());
+            }
+        });
+
+        // 9) Send email notification to doctor
+        if (savedAppointment.getDoctor() != null && savedAppointment.getDoctor().getEmail() != null
+                && !savedAppointment.getDoctor().getEmail().isBlank()) {
+            emailService.sendDoctorAppointmentNotification(savedAppointment, savedAppointment.getDoctor().getEmail());
+        }
+
         return mapToDto(savedAppointment);
     }
 
@@ -160,6 +175,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                         notif.setMessage("Your appointment #" + appointment.getAppointmentNo() + " has been cancelled.");
                         notificationService.sendNotification(notif);
                     });
+
+            // Send cancellation email
+            patientRepo.findById(appointment.getPatientId()).ifPresent(patient -> {
+                if (patient.getEmail() != null && !patient.getEmail().isBlank()) {
+                    emailService.sendAppointmentCancellation(appointment, patient.getEmail());
+                }
+            });
         }
     }
 

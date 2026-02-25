@@ -21,6 +21,7 @@ public class Doctor {
     private User user;
     private String name;
     private String specialization;
+    private String email;
     private double consultationFee;
 
     @Enumerated(EnumType.STRING)

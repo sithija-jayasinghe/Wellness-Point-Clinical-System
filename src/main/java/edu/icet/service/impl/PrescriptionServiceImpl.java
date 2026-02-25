@@ -3,13 +3,16 @@ package edu.icet.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.icet.dto.PrescriptionDto;
 import edu.icet.entity.Consultation;
+import edu.icet.entity.Patient;
 import edu.icet.entity.Prescription;
 import edu.icet.entity.PrescriptionItem;
 import edu.icet.exception.InvalidOperationException;
 import edu.icet.exception.ResourceAlreadyExistsException;
 import edu.icet.exception.ResourceNotFoundException;
 import edu.icet.repository.ConsultationRepository;
+import edu.icet.repository.PatientRepository;
 import edu.icet.repository.PrescriptionRepository;
+import edu.icet.service.EmailService;
 import edu.icet.service.PrescriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,8 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepo;
     private final ConsultationRepository consultationRepo;
+    private final PatientRepository patientRepo;
+    private final EmailService emailService;
     private final ObjectMapper mapper;
 
     @Override
@@ -53,6 +58,25 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         }
 
         Prescription saved = prescriptionRepo.save(prescription);
+
+        // Send prescription email to patient
+        // Chain: Prescription -> Consultation -> Appointment -> patientId -> Patient
+        try {
+            if (saved.getConsultation() != null
+                    && saved.getConsultation().getAppointment() != null
+                    && saved.getConsultation().getAppointment().getPatientId() != null) {
+                Long patientId = saved.getConsultation().getAppointment().getPatientId();
+                Optional<Patient> patientOpt = patientRepo.findById(patientId);
+                patientOpt.ifPresent(patient -> {
+                    if (patient.getEmail() != null && !patient.getEmail().isBlank()) {
+                        emailService.sendPrescriptionIssuedEmail(saved, patient.getEmail(), patient.getName());
+                    }
+                });
+            }
+        } catch (Exception e) {
+            // Do not fail the save if email fails
+        }
+
         return mapper.convertValue(saved, PrescriptionDto.class);
     }
 
