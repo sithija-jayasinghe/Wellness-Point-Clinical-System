@@ -45,6 +45,7 @@ public class SecurityConfig {
     private static final String ROLE_STAFF = "STAFF";
     private static final String ROLE_DOCTOR = "DOCTOR";
     private static final String ROLE_PATIENT = "PATIENT";
+    private static final String ROLE_LAB_OPERATOR = "LAB_OPERATOR";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -74,6 +75,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/doctors/register").hasAnyRole(ROLE_ADMIN, ROLE_STAFF)
                         .requestMatchers("/schedule/add", "/schedule/update/**", "/schedule/delete/**").hasAnyRole(ROLE_ADMIN, ROLE_DOCTOR)
                         .requestMatchers("/appointment/**").hasAnyRole(ROLE_ADMIN, ROLE_STAFF, ROLE_DOCTOR, ROLE_PATIENT)
+
+                        // Lab Test endpoints
+                        .requestMatchers("/api/lab-tests/**").hasAnyRole(ROLE_ADMIN, ROLE_LAB_OPERATOR, ROLE_DOCTOR)
+                        .requestMatchers(HttpMethod.GET, "/api/patients/**").hasAnyRole(ROLE_ADMIN, ROLE_STAFF, ROLE_DOCTOR, ROLE_LAB_OPERATOR)
+                        .requestMatchers(HttpMethod.GET, "/api/prescriptions/**").hasAnyRole(ROLE_ADMIN, ROLE_DOCTOR, ROLE_LAB_OPERATOR)
 
                         .anyRequest().authenticated()
                 )
